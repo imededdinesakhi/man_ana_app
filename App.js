@@ -1,20 +1,36 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import { StyleSheet, SafeAreaView, StatusBar } from 'react-native';
+import { WebView } from 'react-native-webview';
 
 export default function App() {
+  // استدعاء ملف الـ HTML المحلي من مجلد الـ assets
+  const localHtmlFile = require('./assets/index.html');
+
   return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
+    <SafeAreaView style={styles.container}>
+      {/* ضبط شريط الهاتف العلوي ليناسب لون اللعبة */}
+      <StatusBar barStyle="light-content" backgroundColor="#0b132b" />
+      
+      <WebView 
+        source={localHtmlFile}
+        style={styles.webview}
+        javaScriptEnabled={true}
+        domStorageEnabled={true}
+        originWhitelist={['*']}
+        allowFileAccess={true}
+        allowUniversalAccessFromFileURLs={true}
+        mixedContentMode="always"
+      />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#0b132b', 
+  },
+  webview: {
+    flex: 1,
   },
 });

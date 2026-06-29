@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تطبيق من أنا؟ - النسخة الترفيهية المستقرة</title>
+    <style>
+        :root {
+            --primary-color: #1a365d;
+            --accent-color: #27ae60;
+            --card-bg: rgba(255, 255, 255, 0.9);
+            --text-color: #2c3e50;
+            --text-light: #ffffff;
+            --slot-border: #1a365d;
+            --hint-color: #f39c12;
+            --skip-color: #3498db;
+            --panel-bg: rgba(255, 255, 255, 0.95);
+            --q-card-bg: #f8fafc;
+            --q-text-color: #334155;
+            --nav-bg: rgba(255, 255, 255, 0.96);
+            --nav-text: #94a3b8;
+            --nav-active: #1a365d;
+            --brightness: 100%;
+        }
+
+        .dark-theme {
+            --primary-color: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.95);
+            --text-color: #f8fafc;
+            --slot-border: #38bdf8;
+            --panel-bg: rgba(15, 23, 42, 0.98);
+            --q-card-bg: #1e293b;
+            --q-text-color: #e2e8f0;
+            --nav-bg: #0f172a;
+            --nav-text: #64748b;
+            --nav-active: #38bdf8;
+        }
+
+        body {
+            filter: brightness(var(--brightness));
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #0b132b;
+            transition: filter 0.3s ease;
+            user-select: none;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 480px;
+            min-height: 100vh;
+            background-image: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgNVKtZTq8Kqy6jTw9EfboUmallDq98XXhm20ExZUrwIPTwzaELkIjcq14uwPNLuZB3bVAIhnK0_0KU5vginXy0ybmgWkKteBSQYbvHrlm38PwQTDu5xagBegTzD8uDSRh5QXTThGNynbQlfhm6UgK20k4AsStjsd6b15_rhig3MNUFkTK-JO07F-HHNsJr/s1600/studio%20quize.jpg');
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 25px rgba(0,0,0,0.5);
+            position: relative;
+            padding-bottom: 75px;
+            box-sizing: border-box;
+        }
+
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            background: rgba(26, 54, 93, 0.85);
+            backdrop-filter: blur(5px);
+            color: var(--text-light);
+            font-weight: bold;
+            border-bottom: 2px solid rgba(255,255,255,0.1);
+            z-index: 10;
+        }
+
+        .top-left-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            font-size: 1.3rem;
+            cursor: pointer;
+            color: var(--text-light);
+            padding: 0;
+        }
+
+        .coins-container {
+            background: linear-gradient(135deg, #f1c40f, #f39c12);
+            padding: 5px 12px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .screen {
+            display: none;
+            padding: 20px;
+            flex-grow: 1;
+            flex-direction: column;
+            box-sizing: border-box;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        .brand-header {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 10px;
+            margin-bottom: 15px;
+        }
+
+        .app-logo {
+            width: 170px;
+            height: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+        }
+
+        .menu-subtitle {
+            color: #ffffff;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-align: center;
+            margin-top: 5px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.8);
+        }
+
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .category-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.25);
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 2px solid rgba(255,255,255,0.4);
+            position: relative;
+        }
+
+        .category-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.35);
+        }
+
+        .icon-wrapper {
+            width: 85px;
+            height: 85px;
+            border-radius: 50%;
+            overflow: hidden;
+            border: 3px solid #ffffff;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+            background-color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .icon-wrapper img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .card-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--text-color);
+            margin-top: 8px;
+            text-align: center;
+        }
+
+        .progress-badge {
+            position: absolute;
+            top: -5px;
+            left: -5px;
+            background: var(--accent-color);
+            color: white;
+            font-size: 0.75rem;
+            font-weight: bold;
+            padding: 3px 7px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .card-mini-progress {
+            width: 100%;
+            height: 6px;
+            background: #e2e8f0;
+            border-radius: 3px;
+            margin-top: 6px;
+            overflow: hidden;
+        }
+
+        .card-mini-bar {
+            height: 100%;
+            width: 0%;
+            background: var(--accent-color);
+            transition: width 0.3s;
+        }
+
+        .start-game-cta {
+            background: linear-gradient(135deg, #1e3a8a, #3b82f6);
+            color: white;
+            border: 3px solid #ffffff;
+            border-radius: 30px;
+            padding: 12px 35px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            text-align: center;
+            margin: 0 auto 10px auto;
+            width: 60%;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
+        }
+
+        .game-panel {
+            background: var(--panel-bg);
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+            margin-top: 10px;
+        }
+
+        .question-card {
+            background: var(--q-card-bg);
+            border-right: 5px solid var(--accent-color);
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: var(--q-text-color);
+            margin-bottom: 20px;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .answer-slots {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            min-height: 45px;
+            margin-bottom: 20px;
+        }
+
+        .slot {
+            width: 38px;
+            height: 38px;
+            border-bottom: 3px solid var(--slot-border);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--text-color);
+            cursor: pointer;
+        }
+
+        .controls-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            color: white;
+            font-size: 0.95rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .btn-hint { background-color: var(--hint-color); }
+        .btn-skip { background-color: var(--skip-color); }
+
+        .letters-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-top: auto;
+        }
+
+        .letter-tile {
+            background: var(--primary-color);
+            color: white;
+            height: 42px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.1rem;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .letter-tile.hidden { visibility: hidden; }
+
+        .bottom-nav-bar {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 55px;
+            background: var(--nav-bg);
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            border-top: 1px solid rgba(0, 0, 0, 0.1);
+            z-index: 100;
+        }
+
+        .nav-item {
+            font-size: 1.4rem;
+            color: var(--nav-text);
+            cursor: pointer;
+            transition: color 0.2s;
+            padding: 10px;
+        }
+        .nav-item.active {
+            color: var(--nav-active);
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .modal-overlay.show { display: flex; }
+
+        .modal-box {
+            background: var(--panel-bg);
+            color: var(--text-color);
+            padding: 25px;
+            border-radius: 15px;
+            width: 100%;
+            max-width: 360px;
+            text-align: center;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            animation: popIn 0.25s ease;
+        }
+
+        .modal-title { font-size: 1.3rem; font-weight: bold; margin-bottom: 15px; }
+        .modal-msg { font-size: 1.05rem; margin-bottom: 25px; line-height: 1.5; color: var(--text-color); opacity: 0.8; }
+        .modal-btn {
+            background: #27ae60; color: white; border: none; padding: 10px 30px;
+            font-size: 1rem; font-weight: bold; border-radius: 6px; cursor: pointer;
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+        .toggle-switch {
+            width: 50px;
+            height: 26px;
+            background: #cbd5e1;
+            border-radius: 13px;
+            position: relative;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        .toggle-switch.on { background: #27ae60; }
+        .toggle-circle {
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 3px;
+            right: 3px;
+            transition: transform 0.3s;
+        }
+        .toggle-switch.on .toggle-circle { transform: translateX(-24px); }
+
+        .exit-app-btn {
+            background: #cfd8dc;
+            color: #b71c1c;
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.05rem;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        @keyframes popIn {
+            from { transform: scale(0.85); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .banner-ad-placeholder {
+            position: absolute;
+            bottom: 55px;
+            left: 0;
+            width: 100%;
+            height: 50px;
+            background-color: rgba(0, 0, 0, 0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 0.8rem;
+            color: #fff;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+<body onclick="initAudio()">
+
+<div class="app-container">
+    <div class="top-bar">
+        <div class="top-left-actions">
+            <button id="back-button" class="back-btn" onclick="goToMainMenu()" style="display: none;">⬅️</button>
+            <span id="app-title-text">مَن أنا؟</span>
+        </div>
+        <div class="coins-container">
+            <span>🪙</span>
+            <span id="coins-count">50</span>
+        </div>
+    </div>
+
+    <div id="main-menu-screen" class="screen active">
+        <div class="brand-header">
+            <img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgmn6NKveV1UQLVhrss1kQHLzlSWae-px6v9ireSuVorE4YQ7XYNfUO9c8TjDHgxVFTrKW4e_e4K7BvC7lczuXbMuL3Ac3NyuHXjE9zqvCTe52AtB8Zt8Ps5lKaA1F65V7SxN4QQGDxxivpcSr103aOUhHAeb6Sb35OwO_nUzRE8mTFFD2bm6OKrivUmN0-/s1600/logo.png" class="app-logo" alt="من أنا">
+            <div class="menu-subtitle">اختار قسم وابدأ التحدي!</div>
+        </div>
+
+        <div class="categories-grid">
+            <div class="category-card" onclick="startCategory('football')">
+                <span class="progress-badge" id="football-badge">0%</span>
+                <div class="icon-wrapper"><img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiQJdH2CTAiuGWGCTYh4SsrpJjcdinwv-O43cPLRQ629apU7e98-NJgOUDxFYNmf9wfnq_oPF0HNoyTNxGw9OtDsgdLl-hfTcVtFVfNi1orPitO2N67ERe878pbbIZzf2hppmBXbDg-4JVBfmqT02_BQ5BcbeH4_76ovqJoT9wpgUuYHTR_REAtotdAbEfn/s1600/football.png"></div>
+                <div class="card-title">كرة قدم</div>
+                <div class="card-mini-progress"><div class="card-mini-bar" id="football-bar"></div></div>
+            </div>
+
+            <div class="category-card" onclick="startCategory('islam')">
+                <span class="progress-badge" id="islam-badge">0%</span>
+                <div class="icon-wrapper"><img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgKRWIFMm30WZSSPfR40g4CZXkp5iW1RH9NXxZ8ZU5b2A-6Eu1bwhBoJKnlM_nmTUWNkWwQfdCR9Y7-_NawEiUT-x0BVXoYBQbUAicsBkRJMN5eujhe4o4TdaITFdStajn6UdGXTQVU7eKtINTfdaGs6UN0cE7U8DNvRrjABp8Okcm1-qcjUGgvOjzCVh_R/s1600/Islam.png"></div>
+                <div class="card-title">دين</div>
+                <div class="card-mini-progress"><div class="card-mini-bar" id="islam-bar"></div></div>
+            </div>
+
+            <div class="category-card" onclick="startCategory('geography')">
+                <span class="progress-badge" id="geography-badge">0%</span>
+                <div class="icon-wrapper"><img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiYOpAwqgMA6IJ6ABmOiZmLhxwDEOGZ_zzAhOmhsYohjJiuP_-hF_xRzBqGWxInGnojsIB3WKDIRbHJ9Y5FZTlpx-SyntEsRjGgh3mKGcw_CwIKPxE89113KuoDYubFs_l4JYQeEtTsnoVR_oW0ccmDJjONGEuRmsBAvmcAV-Lx5WW5I0mu9xa8Apw2B21g/s1600/geography.png"></div>
+                <div class="card-title">جغرافيا</div>
+                <div class="card-mini-progress"><div class="card-mini-bar" id="geography-bar"></div></div>
+            </div>
+
+            <div class="category-card" onclick="startCategory('history')">
+                <span class="progress-badge" id="history-badge">0%</span>
+                <div class="icon-wrapper"><img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEjfBMmtiSYq9Z3XnjgrlW22t9d_KtmWm1CSqWCc4xeirjm04ucy-e_CO5BrAPB8NPVrxeI2gVQn1jDB6V9FgwcD6YCar2efbF4IDDm6OJHTZU1uwGv8GkHDQcQZQMutC-Jkx7DrPLMwNZU_0GAmHS0MsZqsKH0zTO3nzX5fTzuzpMOlC2WQOd4ta1Fotojx/s1600/history.png"></div>
+                <div class="card-title">تاريخ</div>
+                <div class="card-mini-progress"><div class="card-mini-bar" id="history-bar"></div></div>
+            </div>
+
+            <div class="category-card" onclick="startCategory('politique')">
+                <span class="progress-badge" id="politique-badge">0%</span>
+                <div class="icon-wrapper"><img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiaMKfNz1N2T_7ZrXNgOAXkTemXBJctFiXh0zhcRYZOElcL-mBQlqWPoOyDSF0PWZQuSkHdfELpeJTCOsj6xVm_oudGL7APTfGpZzL7DjXncGjJZopV0IBebkr7SLO5310_Gv5Mp0UmHmGVjgkkODdLuGcAixZD2C3cutYsioaFsge6ldxffJqnNqV8pd6E/s1600/politique.png"></div>
+                <div class="card-title">سياسة</div>
+                <div class="card-mini-progress"><div class="card-mini-bar" id="politique-bar"></div></div>
+            </div>
+
+            <div class="category-card" onclick="startCategory('math')">
+                <span class="progress-badge" id="math-badge">0%</span>
+                <div class="icon-wrapper"><img src="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEgwjKZb-wbTxvNs_Crj-32ZYINkbBSe6FRh3FCq0e-oA0AoLmwUehm2Ck6P2qZaefAgYXONbG5It7ODbgwF-EgBgbkE3NQ1EJgjIXDAPEf4_ElImbmf_Uh6nDkQ4lyWMLeAYUV1ptQI_78LUaBPpegGEDalolRMtebDKSeHUIIfhXX0cmGgSSK-cLWIWQB4/s1600/math.png"></div>
+                <div class="card-title">رياضيات</div>
+                <div class="card-mini-progress"><div class="card-mini-bar" id="math-bar"></div></div>
+            </div>
+        </div>
+
+        <div class="start-game-cta" onclick="triggerSmartPlayButton()">ابدأ اللعب!</div>
+    </div>
+
+    <div id="game-screen" class="screen">
+        <div class="game-panel">
+            <div id="current-category-name" style="font-weight:bold; color:var(--text-color); text-align:center; margin-bottom:12px;">اسم القسم</div>
+            <div class="question-card" id="question-text">جاري التحميل...</div>
+            <div class="answer-slots" id="answer-slots"></div>
+            <div class="controls-container">
+                <button class="btn btn-hint" onclick="useDeleteLetterHint()">حذف حرف (-5)</button>
+                <button class="btn btn-skip" onclick="skipQuestionWithAd()"> تخطي السؤال (إعلان مجاني)</button>
+            </div>
+            <div class="letters-grid" id="letters-grid"></div>
+        </div>
+    </div>
+
+    <div class="banner-ad-placeholder" id="banner-ad">[إعلان بانر سفلي]</div>
+
+    <div class="bottom-nav-bar">
+        <div id="nav-home" class="nav-item active" onclick="handleNavClick('home', this)">🏠</div>
+        <div id="nav-categories" class="nav-item" onclick="handleNavClick('categories', this)">🎛️</div>
+        <div id="nav-profile" class="nav-item" onclick="handleNavClick('profile', this)">👤</div>
+        <div class="nav-item" onclick="openOptionsModal()">⚙️</div>
+    </div>
+</div>
+
+<div id="custom-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div id="modal-title" class="modal-title">تنبيه</div>
+        <div id="modal-msg" class="modal-msg"></div>
+        <button class="modal-btn" onclick="closeCustomModal()">موافق</button>
+    </div>
+</div>
+
+<div id="options-modal" class="modal-overlay">
+    <div class="modal-box">
+        <div class="modal-title">إعدادات اللعبة ⚙️</div>
+        
+        <div class="setting-row">
+            <span>صوت نقرات اللعبة</span>
+            <div id="sound-toggle" class="toggle-switch on" onclick="toggleSoundSetting()">
+                <div class="toggle-circle"></div>
+            </div>
+        </div>
+
+        <div class="setting-row">
+            <span>الوضع الداكن (الليلي)</span>
+            <div id="theme-toggle" class="toggle-switch" onclick="toggleThemeSetting()">
+                <div class="toggle-circle"></div>
+            </div>
+        </div>
+
+        <div class="setting-row">
+            <span>وضع حماية العين (تقليل الضوء)</span>
+            <div id="light-toggle" class="toggle-switch" onclick="toggleLightSetting()">
+                <div class="toggle-circle"></div>
+            </div>
+        </div>
+
+        <hr style="opacity: 0.1; margin: 20px 0;">
+        <button class="exit-app-btn" onclick="exitGameAction()">خروج من اللعبة 🚪</button>
+        <button class="modal-btn" style="background:#475569; margin-top: 15px; width:100%;" onclick="closeOptionsModal()">إغلاق</button>
+    </div>
+</div>
+
+<script>
+    let audioCtx = null;
+    let isSoundEnabled = true;
+    let isLowLightEnabled = false;
+    let isDarkThemeEnabled = false;
+    
+    let currentCoins = 50;
+    let transitionCounter = 0;
+    let modalCallback = null;
+    let userProgress = { football: 0, islam: 0, geography: 0, history: 0, politique: 0, math: 0 };
+    let activeCategory = 'football';
+    let selectedLetters = [];
+
+    const allCategoriesData = {
+        football: [
+            { question: "بدأت مسيرتي الاحترافية في السويد، وتنقلت بين أندية كبرى في إيطاليا وإسبانيا وفرنسا وإنجلترا. فمن أنا؟", answer: "زلاتان", scrambled: ["ز", "ل", "ا", "ت", "ا", "ن", "م", "و", "ي", "ر", "ب", "هـ", "س", "د", "ع"] },
+            { question: "حققت كأس العالم مع منتخب فرنسا قبل أن أتم العشرين من عمري، ولعبت في باريس سان جيرمان ومدريد. فمن أنا؟", answer: "مبابي", scrambled: ["م", "ب", "ا", "ب", "ي", "ر", "و", "ن", "ا", "ل", "د", "و", "س", "ت", "ج"] }
+        ],
+        islam: [
+            { question: "أنا أول الخلفاء الراشدين، ولقبت بالصديق، ورفقت الرسول ﷺ في الهجرة. فمن أنا؟", answer: "أبوبكر", scrambled: ["أ", "ب", "و", "ب", "ك", "ر", "ع", "م", "ر", "ع", "ث", "م", "ا", "ن", "ل"] }
+        ],
+        geography: [
+            { question: "أنا أكبر بلد في أفريقيا والعالم العربي من حيث المساحة، وعاصمتي تدعى البهجة. فمن أنا؟", answer: "الجزائر", scrambled: ["ال", "ج", "ز", "ا", "ئ", "ر", "ت", "و", "ن", "س", "م", "ص", "ر", "ق", "ب"] }
+        ],
+        history: [
+            { question: "قائد عسكري تاريخي مسلم، ولدت في خنشلة بالجزائر، وقُدت الفتوحات الإسلامية الشهيرة بالمغرب والأندلس. فمن أنا؟", answer: "طارق", scrambled: ["ط", "ا", "ر", "ق", "ب", "ن", "ز", "ي", "ا", "د", "م", "ح", "م", "د", "س"] }
+        ],
+        politique: [
+            { question: "أنا مؤسس الدولة الجزائرية الحديثة، وعالم وشاعر وقائد عسكري قاومت الاستعمار الفرنسي لسنوات طويلة. فمن أنا؟", answer: "عبدالقادر", scrambled: ["ع", "ب", "د", "ا", "ل", "ق", "ا", "د", "ر", "م", "س", "ت", "ف", "ى", "ن"] }
+        ],
+        math: [
+            { question: "أنا عالم رياضيات وفلك مسلم، أعتبر مؤسس علم الجبر ومبتكر الأرقام والخوارزميات المستخدمة اليوم. فمن أنا؟", answer: "الخوارزمي", scrambled: ["ا", "ل", "خ", "و", "ا", "ر", "ز", "م", "ي", "إ", "ق", "ل", "ي", "د", "س"] }
+        ]
+    };
+
+    function initAudio() {
+        if (!audioCtx) {
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+    }
+
+    // تصميم أصوات ألعاب ترفيهية تفاعلية بالكامل لتبدو احترافية
+    function playBeep(type) {
+        if (!isSoundEnabled) return;
+        initAudio();
+        if (!audioCtx) return;
+
+        let osc = audioCtx.createOscillator();
+        let gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        if (type === 'tap') {
+            // تأثير نقرة خفيفة وحية (Pop/Bubble sound) تلائم الألعاب الترفيهية
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+            osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.08);
+            gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.08);
+        } else if (type === 'correct') {
+            // محاكاة حماسية لتصفيق الجمهور والاحتفال (Fanfare Accord) تزيد الحماس
+            let now = audioCtx.currentTime;
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(523.25, now); // نغمة دو
+            osc.frequency.setValueAtTime(659.25, now + 0.08); // نغمة مي
+            osc.frequency.setValueAtTime(783.99, now + 0.16); // نغمة صول
+            osc.frequency.setValueAtTime(1046.50, now + 0.24); // نغمة دو العليا
+            gain.gain.setValueAtTime(0.25, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+            osc.start(); osc.stop(now + 0.45);
+        } else if (type === 'wrong') {
+            // صوت خسارة ترفيهي مضحك (Game Over Failure)
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(220, audioCtx.currentTime);
+            osc.frequency.linearRampToValueAtTime(110, audioCtx.currentTime + 0.3);
+            gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+        }
+    }
+
+    function showAlert(title, message, callback = null) {
+        document.getElementById('modal-title').innerText = title;
+        document.getElementById('modal-msg').innerText = message;
+        document.getElementById('custom-modal').classList.add('show');
+        modalCallback = callback;
+    }
+
+    function closeCustomModal() {
+        playBeep('tap');
+        document.getElementById('custom-modal').classList.remove('show');
+        if (modalCallback) { modalCallback(); modalCallback = null; }
+    }
+
+    function openOptionsModal() { playBeep('tap'); document.getElementById('options-modal').classList.add('show'); }
+    function closeOptionsModal() { playBeep('tap'); document.getElementById('options-modal').classList.remove('show'); }
+
+    function toggleSoundSetting() {
+        isSoundEnabled = !isSoundEnabled;
+        const sw = document.getElementById('sound-toggle');
+        if (isSoundEnabled) { sw.classList.add('on'); playBeep('tap'); } else { sw.classList.remove('on'); }
+        saveGameData();
+    }
+
+    function toggleThemeSetting() {
+        isDarkThemeEnabled = !isDarkThemeEnabled;
+        const sw = document.getElementById('theme-toggle');
+        if (isDarkThemeEnabled) {
+            sw.classList.add('on');
+            document.body.classList.add('dark-theme');
+        } else {
+            sw.classList.remove('on');
+            document.body.classList.remove('dark-theme');
+        }
+        playBeep('tap');
+        saveGameData();
+    }
+
+    function toggleLightSetting() {
+        isLowLightEnabled = !isLowLightEnabled;
+        const sw = document.getElementById('light-toggle');
+        if (isLowLightEnabled) {
+            sw.classList.add('on');
+            document.documentElement.style.setProperty('--brightness', '60%');
+        } else {
+            sw.classList.remove('on');
+            document.documentElement.style.setProperty('--brightness', '100%');
+        }
+        playBeep('tap');
+        saveGameData();
+    }
+
+    function exitGameAction() {
+        playBeep('tap');
+        showAlert("خروج 🚪", "شكراً لك على اللعب! يمكنك الآن إغلاق التطبيق من جهازك.");
+        closeOptionsModal();
+    }
+
+    function handleNavClick(type, element) {
+        playBeep('tap');
+        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+        element.classList.add('active');
+        
+        if (type === 'home' || type === 'categories') { 
+            goToMainMenu(); 
+        } else if (type === 'profile') { 
+            showAlert("الملف الشخصي 👤", "قريباً! ستتمكن من رؤية رتبتك والبطولات المحققة هنا."); 
+        }
+    }
+
+    function saveGameData() {
+        localStorage.setItem('saf_coins', currentCoins);
+        localStorage.setItem('saf_progress', JSON.stringify(userProgress));
+        localStorage.setItem('saf_sound', isSoundEnabled ? 'on' : 'off');
+        localStorage.setItem('saf_light', isLowLightEnabled ? 'low' : 'normal');
+        localStorage.setItem('saf_theme', isDarkThemeEnabled ? 'dark' : 'light');
+    }
+
+    function loadGameData() {
+        if (localStorage.getItem('saf_coins') !== null) currentCoins = parseInt(localStorage.getItem('saf_coins'));
+        if (localStorage.getItem('saf_progress') !== null) userProgress = JSON.parse(localStorage.getItem('saf_progress'));
+        
+        const snd = localStorage.getItem('saf_sound');
+        if (snd === 'off') { isSoundEnabled = false; document.getElementById('sound-toggle').classList.remove('on'); }
+        
+        const lgt = localStorage.getItem('saf_light');
+        if (lgt === 'low') {
+            isLowLightEnabled = true;
+            document.getElementById('light-toggle').classList.add('on');
+            document.documentElement.style.setProperty('--brightness', '60%');
+        }
+
+        const thm = localStorage.getItem('saf_theme');
+        if (thm === 'dark') {
+            isDarkThemeEnabled = true;
+            document.getElementById('theme-toggle').classList.add('on');
+            document.body.classList.add('dark-theme');
+        }
+
+        document.getElementById('coins-count').innerText = currentCoins;
+    }
+
+    function initApp() {
+        loadGameData();
+        updateAllMenuProgressBars();
+    }
+
+    function updateAllMenuProgressBars() {
+        for (let cat in allCategoriesData) {
+            const totalQuestions = allCategoriesData[cat].length;
+            const currentIdx = userProgress[cat];
+            const percentage = Math.round((currentIdx / totalQuestions) * 100);
+            
+            const barElement = document.getElementById(`${cat}-bar`);
+            const badgeElement = document.getElementById(`${cat}-badge`);
+            
+            if (barElement) barElement.style.width = `${Math.min(percentage, 100)}%`;
+            if (badgeElement) badgeElement.innerText = `${Math.min(percentage, 100)}%`;
+        }
+    }
+
+    function triggerSmartPlayButton() {
+        playBeep('tap');
+        const totalFootball = allCategoriesData.football.length;
+        if (userProgress.football < totalFootball) {
+            startCategory('football');
+        } else {
+            let nextCat = 'islam';
+            for (let cat in allCategoriesData) {
+                if (userProgress[cat] < allCategoriesData[cat].length) {
+                    nextCat = cat;
+                    break;
+                }
+            }
+            startCategory(nextCat);
+        }
+    }
+
+    function startCategory(categoryName) {
+        playBeep('tap');
+        triggerInterstitialAdCounter();
+        activeCategory = categoryName;
+        
+        document.getElementById('back-button').style.display = 'block';
+        
+        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+        document.getElementById('nav-categories').classList.add('active');
+        
+        const catTitles = { football: "كرة قدم", islam: "دين", geography: "جغرافيا", history: "تاريخ", politique: "سياسة", math: "رياضيات" };
+        document.getElementById('current-category-name').innerText = `قسم: ${catTitles[categoryName]}`;
+
+        switchScreen('game-screen');
+        loadQuestion(userProgress[activeCategory]);
+    }
+
+    function goToMainMenu() {
+        document.getElementById('back-button').style.display = 'none';
+        document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+        document.getElementById('nav-home').classList.add('active');
+        updateAllMenuProgressBars();
+        switchScreen('main-menu-screen');
+    }
+
+    function switchScreen(screenId) {
+        document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+        document.getElementById(screenId).classList.add('active');
+    }
+
+    function loadQuestion(index) {
+        const questionsList = allCategoriesData[activeCategory];
+        
+        if (index >= questionsList.length) {
+            playBeep('correct');
+            showAlert("ممتاز 🎉", "لقد أنهيت كافة الأسئلة المتوفرة في هذا القسم حالياً!", () => {
+                goToMainMenu();
+            });
+            return;
+        }
+        
+        const currentData = questionsList[index];
+        document.getElementById('question-text').innerText = currentData.question;
+        selectedLetters = [];
+        
+        const slotsContainer = document.getElementById('answer-slots');
+        slotsContainer.innerHTML = '';
+        for (let i = 0; i < currentData.answer.length; i++) {
+            const slot = document.createElement('div');
+            slot.className = 'slot';
+            slot.dataset.index = i;
+            slot.onclick = () => removeLetterFromAnswer(i);
+            slotsContainer.appendChild(slot);
+        }
+
+        renderLettersGrid(currentData.scrambled);
+    }
+
+    function renderLettersGrid(letters) {
+        const gridContainer = document.getElementById('letters-grid');
+        gridContainer.innerHTML = '';
+        letters.forEach((char, index) => {
+            const tile = document.createElement('div');
+            tile.className = 'letter-tile';
+            tile.innerText = char;
+            tile.id = `tile-${index}`;
+            tile.onclick = () => selectLetter(char, index);
+            gridContainer.appendChild(tile);
+        });
+    }
+
+    function selectLetter(char, tileIndex) {
+        playBeep('tap');
+        const questionsList = allCategoriesData[activeCategory];
+        const currentData = questionsList[userProgress[activeCategory]];
+        if (selectedLetters.length >= currentData.answer.length) return;
+
+        document.getElementById(`tile-${tileIndex}`).classList.add('hidden');
+        selectedLetters.push({ char: char, tileIndex: tileIndex });
+
+        updateAnswerSlots();
+        
+        if (selectedLetters.length === currentData.answer.length) {
+            setTimeout(checkAnswer, 200);
+        }
+    }
+
+    function removeLetterFromAnswer(slotIndex) {
+        playBeep('tap');
+        if (!selectedLetters[slotIndex]) return;
+        const removed = selectedLetters.splice(slotIndex, 1)[0];
+        document.getElementById(`tile-${removed.tileIndex}`).classList.remove('hidden');
+        updateAnswerSlots();
+    }
+
+    function updateAnswerSlots() {
+        const slots = document.querySelectorAll('.slot');
+        slots.forEach((slot, index) => {
+            slot.innerText = selectedLetters[index] ? selectedLetters[index].char : '';
+        });
+    }
+
+    function checkAnswer() {
+        const questionsList = allCategoriesData[activeCategory];
+        const currentData = questionsList[userProgress[activeCategory]];
+        
+        const finalAnswer = selectedLetters.map(item => item.char).join('');
+        if (finalAnswer === currentData.answer) {
+            playBeep('correct');
+            currentCoins += 10;
+            document.getElementById('coins-count').innerText = currentCoins;
+            
+            userProgress[activeCategory]++;
+            saveGameData();
+            
+            showAlert("إجابة صحيحة ✅", "أحسنت صنعاً! حصلت على +10 نقاط.", () => {
+                triggerInterstitialAdCounter();
+                loadQuestion(userProgress[activeCategory]);
+            });
+        } else {
+            playBeep('wrong');
+            showAlert("إجابة خاطئة ❌", "حاول مجدداً وركز في تفاصيل التلميح!");
+        }
+    }
+
+    // تعديل: منع الخصم أو حذف الأحرف إذا كانت النقاط غير كافية (أقل من 5 نقاط)
+    function useDeleteLetterHint() {
+        playBeep('tap');
+        if (currentCoins < 5) {
+            showAlert("عذراً 🪙", "رصيد نقاطك الحالي غير كافٍ لاستخدام مساعدة حذف حرف!");
+            return;
+        }
+        const questionsList = allCategoriesData[activeCategory];
+        const currentData = questionsList[userProgress[activeCategory]];
+        const tiles = document.querySelectorAll('.letter-tile:not(.hidden)');
+        
+        for (let tile of tiles) {
+            const char = tile.innerText;
+            if (!currentData.answer.includes(char)) {
+                tile.classList.add('hidden');
+                currentCoins -= 5;
+                document.getElementById('coins-count').innerText = currentCoins;
+                saveGameData();
+                break;
+            }
+        }
+    }
+
+    // تعديل: التخطي مجاني تماماً مقابل الإعلان ولا يقوم بإنقاص أي نقاط نهائياً
+    function skipQuestionWithAd() {
+        playBeep('tap');
+        showAlert("تخطي السؤال 📺", "سيتم الآن عرض الإعلان وتخطي هذا السؤال مجاناً بدون خصم نقاط...", () => {
+            userProgress[activeCategory]++;
+            saveGameData();
+            triggerInterstitialAdCounter();
+            loadQuestion(userProgress[activeCategory]);
+        });
+    }
+
+    function triggerInterstitialAdCounter() {
+        transitionCounter++;
+        if (transitionCounter >= 7) {
+            document.getElementById('banner-ad').innerText = "[يظهر الآن إعلان بيني كامل الشاشة]";
+            setTimeout(() => { document.getElementById('banner-ad').innerText = "[إعلان بانر سفلي]"; }, 2000);
+            transitionCounter = 0;
+        }
+    }
+
+    window.onload = initApp;
+</script>
+</body>
+</html>
