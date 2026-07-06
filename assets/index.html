@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تطبيق من أنا؟ - النسخة الترفيهية المستقرة</title>
+    <title>تطبيق من أنا؟</title>
     <style>
         :root {
             --primary-color: #1a365d;
@@ -103,6 +103,7 @@
             gap: 6px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.2);
             text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+            cursor: pointer;
         }
 
         .screen {
@@ -233,10 +234,10 @@
             font-weight: bold;
             cursor: pointer;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
             text-align: center;
             margin: 0 auto 10px auto;
             width: 60%;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.4);
         }
 
         .game-panel {
@@ -258,7 +259,7 @@
             font-size: 1.1rem;
             line-height: 1.6;
             color: var(--q-text-color);
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
         }
 
@@ -268,7 +269,7 @@
             gap: 8px;
             flex-wrap: wrap;
             min-height: 45px;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .slot {
@@ -286,23 +287,30 @@
 
         .controls-container {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .controls-row-top {
+            display: flex;
+            gap: 8px;
         }
 
         .btn {
             flex: 1;
-            padding: 12px;
+            padding: 11px;
             border: none;
             border-radius: 8px;
             font-weight: bold;
             cursor: pointer;
             color: white;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
-        .btn-hint { background-color: var(--hint-color); }
-        .btn-skip { background-color: var(--skip-color); }
+        .btn-hint-remove { background-color: #e67e22; }
+        .btn-hint-reveal { background-color: #27ae60; }
+        .btn-skip { background-color: var(--skip-color); width: 100%; }
 
         .letters-grid {
             display: grid;
@@ -385,6 +393,9 @@
             background: #27ae60; color: white; border: none; padding: 10px 30px;
             font-size: 1rem; font-weight: bold; border-radius: 6px; cursor: pointer;
         }
+        .modal-btn-store {
+            background: #f1c40f; color: #2c3e50; margin-right: 10px;
+        }
 
         .setting-row {
             display: flex;
@@ -441,13 +452,12 @@
             left: 0;
             width: 100%;
             height: 50px;
-            background-color: rgba(0, 0, 0, 0.4);
+            background-color: transparent;
             display: flex;
             justify-content: center;
             align-items: center;
             font-size: 0.8rem;
             color: #fff;
-            border-top: 1px solid rgba(255, 255, 255, 0.1);
         }
     </style>
 </head>
@@ -459,9 +469,9 @@
             <button id="back-button" class="back-btn" onclick="goToMainMenu()" style="display: none;">⬅️</button>
             <span id="app-title-text">مَن أنا؟</span>
         </div>
-        <div class="coins-container">
+        <div class="coins-container" onclick="openCoinsStoreDirectly()">
             <span>🪙</span>
-            <span id="coins-count">50</span>
+            <span id="coins-count">150</span>
         </div>
     </div>
 
@@ -524,14 +534,17 @@
             <div class="question-card" id="question-text">جاري التحميل...</div>
             <div class="answer-slots" id="answer-slots"></div>
             <div class="controls-container">
-                <button class="btn btn-hint" onclick="useDeleteLetterHint()">حذف حرف (-5)</button>
-                <button class="btn btn-skip" onclick="skipQuestionWithAd()"> تخطي السؤال (إعلان مجاني)</button>
+                <div class="controls-row-top">
+                    <button class="btn btn-hint-remove" onclick="useDeleteLetterHint()">حذف حرف ❌ (20🪙)</button>
+                    <button class="btn btn-hint-reveal" onclick="useRevealLetterHint()">إظهار حرف 💡 (40🪙)</button>
+                </div>
+                <button class="btn btn-skip" onclick="useSkipQuestionHint()">تخطي السؤال ⏭️ (100🪙)</button>
             </div>
             <div class="letters-grid" id="letters-grid"></div>
         </div>
     </div>
 
-    <div class="banner-ad-placeholder" id="banner-ad">[إعلان بانر سفلي]</div>
+    <div class="banner-ad-placeholder" id="banner-ad"></div>
 
     <div class="bottom-nav-bar">
         <div id="nav-home" class="nav-item active" onclick="handleNavClick('home', this)">🏠</div>
@@ -545,7 +558,9 @@
     <div class="modal-box">
         <div id="modal-title" class="modal-title">تنبيه</div>
         <div id="modal-msg" class="modal-msg"></div>
-        <button class="modal-btn" onclick="closeCustomModal()">موافق</button>
+        <div id="modal-buttons-container">
+            <button class="modal-btn" onclick="closeCustomModal()">موافق</button>
+        </div>
     </div>
 </div>
 
@@ -586,8 +601,7 @@
     let isLowLightEnabled = false;
     let isDarkThemeEnabled = false;
     
-    let currentCoins = 50;
-    let transitionCounter = 0;
+    let currentCoins = 150; 
     let modalCallback = null;
     let userProgress = { football: 0, islam: 0, geography: 0, history: 0, politique: 0, math: 0 };
     let activeCategory = 'football';
@@ -599,7 +613,7 @@
             { question: "حققت كأس العالم مع منتخب فرنسا قبل أن أتم العشرين من عمري، ولعبت في باريس سان جيرمان ومدريد. فمن أنا؟", answer: "مبابي", scrambled: ["م", "ب", "ا", "ب", "ي", "ر", "و", "ن", "ا", "ل", "د", "و", "س", "ت", "ج"] }
         ],
         islam: [
-            { question: "أنا أول الخلفاء الراشدين، ولقبت بالصديق، ورفقت الرسول ﷺ في الهجرة. فمن أنا؟", answer: "أبوبكر", scrambled: ["أ", "ب", "و", "ب", "ك", "ر", "ع", "م", "ر", "ع", "ث", "م", "ا", "ن", "ل"] }
+            { question: "أنا أول الخلفاء الراشكين، ولقبت بالصديق، ورفقت الرسول ﷺ في الهجرة. فمن أنا؟", answer: "أبوبكر", scrambled: ["أ", "ب", "و", "ب", "ك", "ر", "ع", "م", "ر", "ع", "ث", "م", "ا", "ن", "ل"] }
         ],
         geography: [
             { question: "أنا أكبر بلد في أفريقيا والعالم العربي من حيث المساحة، وعاصمتي تدعى البهجة. فمن أنا؟", answer: "الجزائر", scrambled: ["ال", "ج", "ز", "ا", "ئ", "ر", "ت", "و", "ن", "س", "م", "ص", "ر", "ق", "ب"] }
@@ -624,7 +638,6 @@
         }
     }
 
-    // تصميم أصوات ألعاب ترفيهية تفاعلية بالكامل لتبدو احترافية
     function playBeep(type) {
         if (!isSoundEnabled) return;
         initAudio();
@@ -636,7 +649,6 @@
         gain.connect(audioCtx.destination);
 
         if (type === 'tap') {
-            // تأثير نقرة خفيفة وحية (Pop/Bubble sound) تلائم الألعاب الترفيهية
             osc.type = 'sine';
             osc.frequency.setValueAtTime(400, audioCtx.currentTime);
             osc.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.08);
@@ -644,18 +656,16 @@
             gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
             osc.start(); osc.stop(audioCtx.currentTime + 0.08);
         } else if (type === 'correct') {
-            // محاكاة حماسية لتصفيق الجمهور والاحتفال (Fanfare Accord) تزيد الحماس
             let now = audioCtx.currentTime;
             osc.type = 'triangle';
-            osc.frequency.setValueAtTime(523.25, now); // نغمة دو
-            osc.frequency.setValueAtTime(659.25, now + 0.08); // نغمة مي
-            osc.frequency.setValueAtTime(783.99, now + 0.16); // نغمة صول
-            osc.frequency.setValueAtTime(1046.50, now + 0.24); // نغمة دو العليا
+            osc.frequency.setValueAtTime(523.25, now); 
+            osc.frequency.setValueAtTime(659.25, now + 0.08); 
+            osc.frequency.setValueAtTime(783.99, now + 0.16); 
+            osc.frequency.setValueAtTime(1046.50, now + 0.24); 
             gain.gain.setValueAtTime(0.25, now);
             gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
             osc.start(); osc.stop(now + 0.45);
         } else if (type === 'wrong') {
-            // صوت خسارة ترفيهي مضحك (Game Over Failure)
             osc.type = 'sawtooth';
             osc.frequency.setValueAtTime(220, audioCtx.currentTime);
             osc.frequency.linearRampToValueAtTime(110, audioCtx.currentTime + 0.3);
@@ -668,9 +678,68 @@
     function showAlert(title, message, callback = null) {
         document.getElementById('modal-title').innerText = title;
         document.getElementById('modal-msg').innerText = message;
+        
+        const btnContainer = document.getElementById('modal-buttons-container');
+        btnContainer.innerHTML = `<button class="modal-btn" onclick="closeCustomModal()">موافق</button>`;
+        
         document.getElementById('custom-modal').classList.add('show');
         modalCallback = callback;
     }
+
+    function showCoinsStoreModal() {
+        document.getElementById('modal-title').innerText = "شحن مجاني للعملات 🪙";
+        document.getElementById('modal-msg').innerText = "رصيدك غير كافٍ! شاهد إعلان فيديو بمكافأة واحصل على 50 عملة ذهبية مجاناً فوراً لتكمل اللعب.";
+        
+        const btnContainer = document.getElementById('modal-buttons-container');
+        btnContainer.innerHTML = `
+            <button class="modal-btn modal-btn-store" onclick="triggerRewardedAdRequest()">📺 مشاهدة إعلان (+50)</button>
+            <button class="modal-btn" style="background:#747d8c;" onclick="closeCustomModal()">إلغاء</button>
+        `;
+        document.getElementById('custom-modal').classList.add('show');
+    }
+
+    function openCoinsStoreDirectly() {
+        playBeep('tap');
+        document.getElementById('modal-title').innerText = "متجر العملات المجاني 🪙";
+        document.getElementById('modal-msg').innerText = "هل تود مشاهدة إعلان فيديو سريع والحصول على 50 عملة مجانية فوراً لزيادة رصيدك؟";
+        
+        const btnContainer = document.getElementById('modal-buttons-container');
+        btnContainer.innerHTML = `
+            <button class="modal-btn modal-btn-store" onclick="triggerRewardedAdRequest()">📺 مشاهدة الآن (+50)</button>
+            <button class="modal-btn" style="background:#747d8c;" onclick="closeCustomModal()">إغلاق</button>
+        `;
+        document.getElementById('custom-modal').classList.add('show');
+    }
+
+    function triggerRewardedAdRequest() {
+        closeCustomModal();
+        if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: "REQUEST_REWARDED_AD" }));
+        } else {
+            // كود احتياطي للمتصفحات العادية عند التطوير فقط
+            alert("ميزة الإعلانات بمكافأة حقيقية تعمل فقط داخل التطبيق المحمول.");
+            addCoinsReward(50); 
+        }
+    }
+
+    function addCoinsReward(amount) {
+        currentCoins += amount;
+        document.getElementById('coins-count').innerText = currentCoins;
+        saveGameData();
+        showAlert("تم الشحن بنجاح 🎉", `شكرًا لمشاهدتك! تم إضافة ${amount} عملة إلى محفظتك بنجاح.`);
+    }
+
+    // قناة استقبال التأكيدات الرسمية من حاوية Expo لربح النقاط
+    window.addEventListener("message", function(event) {
+        try {
+            let data = JSON.parse(event.data);
+            if (data.type === "ADD_COINS_SUCCESS") {
+                addCoinsReward(data.amount);
+            }
+        } catch (e) {
+            console.error("Error parsing native mobile message", e);
+        }
+    });
 
     function closeCustomModal() {
         playBeep('tap');
@@ -743,7 +812,12 @@
     }
 
     function loadGameData() {
-        if (localStorage.getItem('saf_coins') !== null) currentCoins = parseInt(localStorage.getItem('saf_coins'));
+        if (localStorage.getItem('saf_coins') !== null) {
+            currentCoins = parseInt(localStorage.getItem('saf_coins'));
+        } else {
+            currentCoins = 150; // رصيد بداية ترحيبي لأول مرة
+            localStorage.setItem('saf_coins', currentCoins);
+        }
         if (localStorage.getItem('saf_progress') !== null) userProgress = JSON.parse(localStorage.getItem('saf_progress'));
         
         const snd = localStorage.getItem('saf_sound');
@@ -804,11 +878,10 @@
 
     function startCategory(categoryName) {
         playBeep('tap');
-        triggerInterstitialAdCounter();
+        sendPageChangeNotification(); // لإعلام إكسبو من أجل تتبع الـ 7 مراحل
         activeCategory = categoryName;
         
         document.getElementById('back-button').style.display = 'block';
-        
         document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
         document.getElementById('nav-categories').classList.add('active');
         
@@ -893,7 +966,10 @@
         playBeep('tap');
         if (!selectedLetters[slotIndex]) return;
         const removed = selectedLetters.splice(slotIndex, 1)[0];
-        document.getElementById(`tile-${removed.tileIndex}`).classList.remove('hidden');
+        // إذا كان الحرف مأخوذاً من لوحة الحروف وليس عبر زر الإظهار التلقائي
+        if (removed.tileIndex !== -1 && document.getElementById(`tile-${removed.tileIndex}`)) {
+            document.getElementById(`tile-${removed.tileIndex}`).classList.remove('hidden');
+        }
         updateAnswerSlots();
     }
 
@@ -918,7 +994,7 @@
             saveGameData();
             
             showAlert("إجابة صحيحة ✅", "أحسنت صنعاً! حصلت على +10 نقاط.", () => {
-                triggerInterstitialAdCounter();
+                sendPageChangeNotification();
                 loadQuestion(userProgress[activeCategory]);
             });
         } else {
@@ -927,46 +1003,97 @@
         }
     }
 
-    // تعديل: منع الخصم أو حذف الأحرف إذا كانت النقاط غير كافية (أقل من 5 نقاط)
+    // 1. ميزة حذف حرف خاطئ: تكلف 20 عملة
     function useDeleteLetterHint() {
         playBeep('tap');
-        if (currentCoins < 5) {
-            showAlert("عذراً 🪙", "رصيد نقاطك الحالي غير كافٍ لاستخدام مساعدة حذف حرف!");
+        if (currentCoins < 20) {
+            showCoinsStoreModal();
             return;
         }
         const questionsList = allCategoriesData[activeCategory];
         const currentData = questionsList[userProgress[activeCategory]];
         const tiles = document.querySelectorAll('.letter-tile:not(.hidden)');
         
+        let flag = false;
         for (let tile of tiles) {
             const char = tile.innerText;
             if (!currentData.answer.includes(char)) {
                 tile.classList.add('hidden');
-                currentCoins -= 5;
+                currentCoins -= 20;
                 document.getElementById('coins-count').innerText = currentCoins;
                 saveGameData();
+                flag = true;
                 break;
             }
         }
+        if(!flag) {
+            showAlert("تنبيه 💡", "تم حذف كافة الحروف الخاطئة المتاحة بالفعل!");
+        }
     }
 
-    // تعديل: التخطي مجاني تماماً مقابل الإعلان ولا يقوم بإنقاص أي نقاط نهائياً
-    function skipQuestionWithAd() {
+    // 2. ميزة إظهار حرف صحيح: تكلف 40 عملة
+    function useRevealLetterHint() {
         playBeep('tap');
-        showAlert("تخطي السؤال 📺", "سيتم الآن عرض الإعلان وتخطي هذا السؤال مجاناً بدون خصم نقاط...", () => {
-            userProgress[activeCategory]++;
-            saveGameData();
-            triggerInterstitialAdCounter();
+        if (currentCoins < 40) {
+            showCoinsStoreModal();
+            return;
+        }
+        const questionsList = allCategoriesData[activeCategory];
+        const currentData = questionsList[userProgress[activeCategory]];
+        
+        let currentFilledLength = selectedLetters.length;
+        if (currentFilledLength >= currentData.answer.length) {
+            showAlert("تنبيه 💡", "الخانات ممتلئة بالكامل بالفعل، قم بحذف حرف لملء حرف صحيح.");
+            return;
+        }
+
+        let nextCorrectChar = currentData.answer[currentFilledLength];
+        
+        // البحث عن الحرف في اللوحة لإخفائه إن وجد
+        let foundIndex = -1;
+        const tiles = document.querySelectorAll('.letter-tile');
+        for (let i = 0; i < tiles.length; i++) {
+            if (tiles[i].innerText === nextCorrectChar && !tiles[i].classList.contains('hidden')) {
+                foundIndex = i;
+                tiles[i].classList.add('hidden');
+                break;
+            }
+        }
+
+        selectedLetters.push({ char: nextCorrectChar, tileIndex: foundIndex });
+        currentCoins -= 40;
+        document.getElementById('coins-count').innerText = currentCoins;
+        saveGameData();
+        updateAnswerSlots();
+
+        if (selectedLetters.length === currentData.answer.length) {
+            setTimeout(checkAnswer, 200);
+        }
+    }
+
+    // 3. ميزة تخطي السؤال بالكامل: تكلف 100 عملة
+    function useSkipQuestionHint() {
+        playBeep('tap');
+        if (currentCoins < 100) {
+            showCoinsStoreModal();
+            return;
+        }
+        
+        currentCoins -= 100;
+        document.getElementById('coins-count').innerText = currentCoins;
+        userProgress[activeCategory]++;
+        saveGameData();
+        
+        showAlert("تم التخطي ⏭️", "تم خصم 100 نقطة والانتقال للمرحلة التالية.", () => {
+            sendPageChangeNotification();
             loadQuestion(userProgress[activeCategory]);
         });
     }
 
-    function triggerInterstitialAdCounter() {
-        transitionCounter++;
-        if (transitionCounter >= 7) {
-            document.getElementById('banner-ad').innerText = "[يظهر الآن إعلان بيني كامل الشاشة]";
-            setTimeout(() => { document.getElementById('banner-ad').innerText = "[إعلان بانر سفلي]"; }, 2000);
-            transitionCounter = 0;
+    // دالة إرسال إشعار التغيير للحاوية الأصلية
+    function sendPageChangeNotification() {
+        if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: "PAGE_CHANGED" }));
         }
     }
 

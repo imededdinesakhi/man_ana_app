@@ -11,6 +11,9 @@
       "distribution": "internal",
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "KOTLIN_VERSION": "2.3.0"
       }
     },
     "production": {}

@@ -1,27 +1,44 @@
 {
   "expo": {
-    "name": "man-ana-app",
+    "name": "من أنا",
     "slug": "man-ana-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "assetBundlePatterns": [
-      "**/*"
-    ],
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "splash": {
+        "image": "./assets/splash.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#ffffff"
+      }
     },
     "android": {
-      "package": "com.imededdinesakhi.mananaapp"
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "splash": {
+        "image": "./assets/splash.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#ffffff"
+      },
+      "package": "com.nexura.manana"
     },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
+    "plugins": [
+      [
+        "react-native-google-mobile-ads",
+        {
+          "androidAppId": "ca-app-pub-3940256099942544~3347511713"
+        }
+      ]
+    ],
     "extra": {
       "eas": {
         "projectId": "eb7ca4ea-8357-4151-b902-2c75f07de305"
       }
-    }
+    },
+    "owner": "imededdinesakhi"
   }
 }
