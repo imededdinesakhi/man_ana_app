@@ -26,10 +26,17 @@
       [
         "expo-build-properties",
         {
-          "android": {
-            "kotlinVersion": "2.3.0"
-          }
+      "android": {
+        "kotlinVersion": "2.1.0",
+        "packagingOptions": {
+          "pickFirst": [
+            "**/kotlin-stdlib/*.kotlin_module",
+            "**/kotlin-stdlib-*.kotlin_module",
+            "META-INF/*.kotlin_module"
+          ]
         }
+      }
+    }
       ]
     ],
     "extra": {
