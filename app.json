@@ -16,30 +16,28 @@
       },
       "package": "com.nexura.manana"
     },
-    "plugins": [
-      [
-        "react-native-google-mobile-ads",
-        {
-          "androidAppId": "ca-app-pub-3940256099942544~3347511713"
+"plugins": [
+  [
+    "react-native-google-mobile-ads",
+    {
+      "androidAppId": "ca-app-pub-3940256099942544~3347511713" 
+    }
+  ],
+  [
+    "expo-build-properties",
+    {
+      "android": {
+        "packagingOptions": {
+          "pickFirst": [
+            "**/kotlin-stdlib/*.kotlin_module",
+            "**/kotlin-stdlib-*.kotlin_module",
+            "META-INF/*.kotlin_module"
+          ]
         }
-      ],
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "kotlinVersion": "2.1.20",
-            "packagingOptions": {
-              "pickFirst": [
-                "**/kotlin-stdlib/*.kotlin_module",
-                "**/kotlin-stdlib-*.kotlin_module",
-                "META-INF/*.kotlin_module",
-                "**/*.kotlin_module"
-              ]
-            }
-          }
-        }
-      ]
-    ],
+      }
+    }
+  ]
+]
     "extra": {
       "eas": {
         "projectId": "eb7ca4ea-8357-4151-b902-2c75f07de305"
