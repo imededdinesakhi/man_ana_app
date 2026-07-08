@@ -32,20 +32,9 @@
               "pickFirst": [
                 "**/kotlin-stdlib/*.kotlin_module",
                 "**/kotlin-stdlib-*.kotlin_module",
-                "META-INF/*.kotlin_module",
-                "**/*.kotlin_module"
+                "META-INF/*.kotlin_module"
               ]
             }
-          }
-        }
-      ],
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "extraLines": [
-              "tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach { kotlinOptions { freeCompilerArgs += ['-Xskip-metadata-version-check'] } }"
-            ]
           }
         }
       ]
