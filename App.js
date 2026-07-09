@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, View, SafeAreaView, Platform, StatusBar } from 'react-native';
 import { WebView } from 'react-native-webview';
-// استيراد مكتبة الإعلانات الرسمية
+// استيراد مكتبة الإعلانات الرسمية (معدل ليتوافق مع v14 بسلام)
 import { 
   BannerAd, 
   BannerAdSize, 
@@ -27,8 +27,7 @@ export default function App() {
   const [rewardedLoaded, setRewardedLoaded] = useState(false);
   const [interstitialLoaded, setInterstitialLoaded] = useState(false);
 
-  // رابط مستودع الـ HTML الخاص بك (أو رابط محلي أثناء التجربة)
-  // استبدل هذا الرابط برابط Git الخاص بلعبتك أو رابط Vercel/Netlify
+  // رابط مستودع الـ HTML الخاص بك
   const GAME_URL = "https://imededdinesakhi.github.io/man_ana_web/";
 
   useEffect(() => {
@@ -49,8 +48,9 @@ export default function App() {
       }
     );
 
+    // 💡 تعديل حاسم: تم تغيير RewardedAdEventType.CLOSED إلى AdEventType.CLOSED ليتوافق مع v14
     const unsubscribeRewardedClosed = rewarded.addAdEventListener(
-      RewardedAdEventType.CLOSED,
+      AdEventType.CLOSED,
       () => {
         setRewardedLoaded(false);
         rewarded.load(); // إعادة تحميل إعلان آخر للخلفية
@@ -94,7 +94,6 @@ export default function App() {
         if (rewardedLoaded) {
           rewarded.show();
         } else {
-          // إشعار احتياطي في حال لم يكتمل تحميل الإعلان من السيرفر بعد
           alert("الإعلان جاري التحميل، يرجى المحاولة مجدداً بعد ثوانٍ قليلة.");
           rewarded.load();
         }
@@ -153,7 +152,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#0b132b',
   },
   webViewContainer: {
-    flex: 1, // يأخذ كل المساحة المتبقية فوق الإعلان
+    flex: 1,
   },
   webview: {
     flex: 1,
@@ -161,12 +160,12 @@ const styles = StyleSheet.create({
   },
   bannerContainer: {
     width: '100%',
-    minHeight: 60, // 👈 إجبار الحاوية على حجز مساحة لا تقل عن 60 بكسل للبانر
+    minHeight: 60,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0b132b', // جعل الخلفية متناسقة مع لون اللعبة لعدم حدوث وميض أبيض
+    backgroundColor: '#0b132b',
     paddingVertical: 4,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)', // خط برمجى خفيف يفصل اللعبة عن الإعلان
+    borderTopColor: 'rgba(255,255,255,0.05)',
   },
 });
