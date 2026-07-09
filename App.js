@@ -136,11 +136,11 @@ export default function App() {
 
       {/* إعلان البانر الثابت الحقيقي أسفل التطبيق فوق أزرار التحكم مباشرة */}
       <View style={styles.bannerContainer}>
-        <BannerAd
-          unitId={bannerAdUnitId}
-          size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-          requestOptions={{ requestNonPersonalizedAdsOnly: true }}
-        />
+       <BannerAd
+  unitId={bannerAdUnitId}
+  size={BannerAdSize.BANNER} // 💡 استخدام الحجم القياسي 50dp ليكون صغيراً وأنيقاً
+  requestOptions={{ requestNonPersonalizedAdsOnly: true }}
+      />
       </View>
     </SafeAreaView>
   );
@@ -160,12 +160,12 @@ const styles = StyleSheet.create({
   },
   bannerContainer: {
     width: '100%',
-    minHeight: 60,
+    // 💡 قمنا بحذف الـ minHeight تماماً لكي تنكمش الحاوية على حجم الإعلان بالضبط
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0b132b',
-    paddingVertical: 4,
+    backgroundColor: '#0b132b', 
+    paddingVertical: 0, // إلغاء الحشو الرأسي لتقليل الارتفاع الزائد
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)',
+    borderTopColor: 'rgba(255,255,255,0.05)', 
   },
 });
