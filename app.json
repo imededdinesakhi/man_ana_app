@@ -14,7 +14,10 @@
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.nexura.manana"
+      "package": "com.nexura.manana",
+      "statusBar": {
+    "hidden": true
+  }
     },
     "plugins": [
       [

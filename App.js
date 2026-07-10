@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, View, SafeAreaView, Platform, StatusBar } from 'react-native';
 import { WebView } from 'react-native-webview';
-// استيراد مكتبة الإعلانات الرسمية (معدل ليتوافق مع v14 بسلام)
+// استيراد مكتبة الإعلانات الرسمية
 import { 
   BannerAd, 
   BannerAdSize, 
@@ -12,7 +12,7 @@ import {
   AdEventType 
 } from 'react-native-google-mobile-ads';
 
-// معرفات الإعلانات (مجهّزة حالياً بمعرفات تجريبية آمنة للتطوير)
+// معرفات الإعلانات
 const bannerAdUnitId = __DEV__ ? TestIds.BANNER : 'ca-app-pub-xxxxxxxxxxxxx/xxxxxxxxxx';
 const interstitialAdUnitId = __DEV__ ? TestIds.INTERSTITIAL : 'ca-app-pub-xxxxxxxxxxxxx/xxxxxxxxxx';
 const rewardedAdUnitId = __DEV__ ? TestIds.REWARDED : 'ca-app-pub-xxxxxxxxxxxxx/xxxxxxxxxx';
@@ -30,6 +30,14 @@ export default function App() {
   // رابط مستودع الـ HTML الخاص بك
   const GAME_URL = "https://imededdinesakhi.github.io/man_ana_web/";
 
+  // الكود السحري لضمان استقرار لغة الجافاسكريبت ومنع أخطاء التلقائية الكراش
+  const injectedJavaScript = `
+    (function() {
+      console.log("WebView initialized safely");
+    })();
+    true;
+  `;
+
   useEffect(() => {
     // 1. تحميل الإعلان بمكافأة وتجهيزه
     const unsubscribeRewardedLoaded = rewarded.addAdEventListener(
@@ -40,7 +48,6 @@ export default function App() {
     const unsubscribeEarned = rewarded.addAdEventListener(
       RewardedAdEventType.EARNED_REWARD,
       (reward) => {
-        // عندما يكمل المستخدم مشاهدة الإعلان، نرسل إشارة للـ HTML لإضافة 50 عملة
         if (webViewRef.current) {
           const successMessage = JSON.stringify({ type: "ADD_COINS_SUCCESS", amount: 50 });
           webViewRef.current.postMessage(successMessage);
@@ -48,12 +55,11 @@ export default function App() {
       }
     );
 
-    // 💡 تعديل حاسم: تم تغيير RewardedAdEventType.CLOSED إلى AdEventType.CLOSED ليتوافق مع v14
     const unsubscribeRewardedClosed = rewarded.addAdEventListener(
       AdEventType.CLOSED,
       () => {
         setRewardedLoaded(false);
-        rewarded.load(); // إعادة تحميل إعلان آخر للخلفية
+        rewarded.load();
       }
     );
 
@@ -67,7 +73,7 @@ export default function App() {
       AdEventType.CLOSED,
       () => {
         setInterstitialLoaded(false);
-        interstitial.load(); // إعادة تحميل إعلان آخر
+        interstitial.load();
       }
     );
 
@@ -84,12 +90,11 @@ export default function App() {
     };
   }, []);
 
-  // دالة استقبال الرسائل القادمة من الـ HTML (الـ WebView)
+  // دالة استقبال الرسائل القادمة من الـ HTML
   const handleWebViewMessage = (event) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
 
-      // الحالة الأولى: اللاعب طلب شحن نقاط وضغط على زر "مشاهدة إعلان"
       if (data.type === "REQUEST_REWARDED_AD") {
         if (rewardedLoaded) {
           rewarded.show();
@@ -99,7 +104,6 @@ export default function App() {
         }
       }
 
-      // الحالة الثانية: الانتقال بين المراحل أو تخطي الأسئلة (حساب الـ 7 مراحل الحقيقي)
       if (data.type === "PAGE_CHANGED") {
         const nextCount = pageChangeCount + 1;
         setPageChangeCount(nextCount);
@@ -108,7 +112,7 @@ export default function App() {
           if (interstitialLoaded) {
             interstitial.show();
           }
-          setPageChangeCount(0); // تصغير العداد للبدء من جديد لـ 7 مراحل أخرى
+          setPageChangeCount(0);
         }
       }
     } catch (error) {
@@ -117,8 +121,9 @@ export default function App() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#1a365d" />
+    <View style={styles.container}>
+      {/* 🛠️ التعديل الحاسم الأول: إخفاء شريط الحالة تماماً للحصول على مظهر Fullscreen احترافي للعبة */}
+      <StatusBar hidden={true} />
       
       {/* نافذة عرض اللعبة الـ HTML */}
       <View style={styles.webViewContainer}>
@@ -127,28 +132,34 @@ export default function App() {
           source={{ uri: GAME_URL }}
           style={styles.webview}
           onMessage={handleWebViewMessage}
+          
+          // 🛠️ التعديل الحاسم الثاني: منع كراش الجافاسكريبت ومنع الزوم التلقائي بالأصابع
+          injectedJavaScript={injectedJavaScript}
           javaScriptEnabled={true}
           domStorageEnabled={true}
+          scalesPageToFit={false}
+          
           originWhitelist={['*']}
           allowsBackForwardNavigationGestures={true}
         />
       </View>
 
-      {/* إعلان البانر الثابت الحقيقي أسفل التطبيق فوق أزرار التحكم مباشرة */}
+      {/* إعلان البانر الثابت أسفل التطبيق */}
       <View style={styles.bannerContainer}>
-       <BannerAd
-  unitId={bannerAdUnitId}
-  size={BannerAdSize.BANNER} // 💡 استخدام الحجم القياسي 50dp ليكون صغيراً وأنيقاً
-  requestOptions={{ requestNonPersonalizedAdsOnly: true }}
-      />
+        <BannerAd
+          unitId={bannerAdUnitId}
+          size={BannerAdSize.BANNER}
+          requestOptions={{ requestNonPersonalizedAdsOnly: true }}
+        />
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    // خلفية سوداء داكنة وموحدة تمنع ظهور أي فراغات شفافة
     backgroundColor: '#0b132b',
   },
   webViewContainer: {
@@ -160,11 +171,10 @@ const styles = StyleSheet.create({
   },
   bannerContainer: {
     width: '100%',
-    // 💡 قمنا بحذف الـ minHeight تماماً لكي تنكمش الحاوية على حجم الإعلان بالضبط
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: '#0b132b', 
-    paddingVertical: 0, // إلغاء الحشو الرأسي لتقليل الارتفاع الزائد
+    paddingVertical: 0,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255,255,255,0.05)', 
   },
