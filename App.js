@@ -13,11 +13,11 @@ import {
 } from 'react-native-google-mobile-ads';
 
 // 🛠️ معرفات الإعلانات الرسمية الكاملة الخاصة بك
-const bannerAdUnitId = __DEV__ ? TestIds.BANNER : 'ca-app-pub-3363485131173314/7285247587';
-const interstitialAdUnitId = __DEV__ ? TestIds.INTERSTITIAL : 'ca-app-pub-3363485131173314/2204732756';
-const rewardedAdUnitId = __DEV__ ? TestIds.REWARDED : 'ca-app-pub-3363485131173314/2622545474';
-const appOpenAdUnitId = __DEV__ ? TestIds.APP_OPEN : 'ca-app-pub-3363485131173314/5844594865';
-
+// 🧪 تعديل مؤقت لإجبار التطبيق على تشغيل الإعلانات التجريبية داخل الـ APK والاطمئنان
+const bannerAdUnitId = TestIds.BANNER;
+const interstitialAdUnitId = TestIds.INTERSTITIAL;
+const rewardedAdUnitId = TestIds.REWARDED;
+const appOpenAdUnitId = TestIds.APP_OPEN;
 // إنشاء كائنات الإعلانات
 const interstitial = InterstitialAd.createForAdRequest(interstitialAdUnitId, { requestNonPersonalizedAdsOnly: true });
 const rewarded = RewardedAd.createForAdRequest(rewardedAdUnitId, { requestNonPersonalizedAdsOnly: true });
