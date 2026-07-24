@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, View, StatusBar, AppState } from 'react-native';
+import { StyleSheet, View, StatusBar, AppState, TouchableOpacity, Text } from 'react-native';
 import { WebView } from 'react-native-webview';
-import { 
+import mobileAds, { 
   BannerAd, 
   BannerAdSize, 
   TestIds, 
@@ -12,13 +12,20 @@ import {
   AppOpenAd
 } from 'react-native-google-mobile-ads';
 
-// 1. معرفات الإعلانات الرسمية والإنتاجية الخاصة بتطبيقك
-const bannerAdUnitId = __DEV__ ? TestIds.BANNER : 'ca-app-pub-3363485131173314/7285247587';
-const interstitialAdUnitId = __DEV__ ? TestIds.INTERSTITIAL : 'ca-app-pub-3363485131173314/2204732756';
-const rewardedAdUnitId = __DEV__ ? TestIds.REWARDED : 'ca-app-pub-3363485131173314/2622545474';
-const appOpenAdUnitId = __DEV__ ? TestIds.APP_OPEN : 'ca-app-pub-3363485131173314/5844594865';
+// ==========================================
+// 💡 مفتاح التحكم بالإعلانات:
+// اجعلها true لتجربة الإعلانات التجريبية والتأكد من الكود
+// اجعلها false عندما تريد استخدام إعلاناتك الحقيقية للجمهور
+// ==========================================
+const USE_TEST_ADS = true; 
 
-// 2. إنشاء كائنات الإعلانات مسبقاً وتمرير خيارات منع الإعلانات المخصصة لحماية الخصوصية
+// معرفات إعلاناتك الحقيقية والتجريبية
+const bannerAdUnitId = USE_TEST_ADS ? TestIds.BANNER : 'ca-app-pub-3363485131173314/7285247587';
+const interstitialAdUnitId = USE_TEST_ADS ? TestIds.INTERSTITIAL : 'ca-app-pub-3363485131173314/2204732756';
+const rewardedAdUnitId = USE_TEST_ADS ? TestIds.REWARDED : 'ca-app-pub-3363485131173314/2622545474';
+const appOpenAdUnitId = USE_TEST_ADS ? TestIds.APP_OPEN : 'ca-app-pub-3363485131173314/5844594865';
+
+// إنشاء كائنات الإعلانات مسبقاً
 const interstitial = InterstitialAd.createForAdRequest(interstitialAdUnitId, { requestNonPersonalizedAdsOnly: true });
 const rewarded = RewardedAd.createForAdRequest(rewardedAdUnitId, { requestNonPersonalizedAdsOnly: true });
 const appOpenAd = AppOpenAd.createForAdRequest(appOpenAdUnitId, { requestNonPersonalizedAdsOnly: true });
@@ -32,16 +39,32 @@ export default function App() {
   // رابط مستودع اللعبة الخاص بك على الويب
   const GAME_URL = "https://imededdinesakhi.github.io/man_ana_web/";
 
+  // دالة فتح Ad Inspector برمجياً عند الحاجة
+  const openInspector = () => {
+    mobileAds()
+      .openAdInspector()
+      .then(() => console.log('Ad Inspector opened'))
+      .catch((error) => console.error('Ad Inspector error:', error));
+  };
+
   useEffect(() => {
-    // ==========================================
-    // أ- إدارة إعلان فتح التطبيق (App Open Ad)
-    // ==========================================
+    // 1. تهيئة AdMob أولاً
+    mobileAds()
+      .initialize()
+      .then(adapterStatuses => {
+        console.log('AdMob Initialized successfully!');
+        
+        // بدء تحميل الإعلانات مسبقاً بعد التهيئة
+        appOpenAd.load();
+        rewarded.load();
+        interstitial.load();
+      });
+
+    // 2. إدارة إعلان فتح التطبيق (App Open)
     const unsubscribeOpen = appOpenAd.addAdEventListener(AdEventType.LOADED, () => {
       appOpenAd.show();
     });
-    appOpenAd.load();
 
-    // مستمع لمراقبة خروج المستخدم من التطبيق وعودته إليه من أجل إعلان الفتح
     const subscription = AppState.addEventListener('change', nextAppState => {
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
         appOpenAd.load();
@@ -49,19 +72,15 @@ export default function App() {
       appState.current = nextAppState;
     });
 
-    // ==========================================
-    // ب- إدارة إعلانات المكافآت (Rewarded Ads)
-    // ==========================================
+    // 3. إدارة إعلانات المكافآت (Rewarded)
     const unsubscribeRewardedLoaded = rewarded.addAdEventListener(
       RewardedAdEventType.LOADED, 
       () => setRewardedLoaded(true)
     );
 
-    // هذا هو الحدث الأهم: يتم إطلاقه فور انتهاء المستخدم من مشاهدة الإعلان كاملاً
     const unsubscribeEarned = rewarded.addAdEventListener(
       RewardedAdEventType.EARNED_REWARD, 
       (reward) => {
-        // إرسال رسالة آمنة عبر الجسر البرمجي للويب لشحن الـ 50 عملة فوراً
         if (webViewRef.current) {
           webViewRef.current.postMessage(JSON.stringify({ type: "ADD_COINS_SUCCESS", amount: 50 }));
         }
@@ -72,13 +91,11 @@ export default function App() {
       AdEventType.CLOSED, 
       () => {
         setRewardedLoaded(false);
-        rewarded.load(); // تحميل الإعلان التالي مسبقاً في الخلفية
+        rewarded.load();
       }
     );
 
-    // ==========================================
-    // ج- إدارة الإعلانات البينية المنظمة (Interstitial)
-    // ==========================================
+    // 4. إدارة الإعلانات البينية (Interstitial)
     const unsubscribeInterstitialLoaded = interstitial.addAdEventListener(
       AdEventType.LOADED, 
       () => setInterstitialLoaded(true)
@@ -88,15 +105,10 @@ export default function App() {
       AdEventType.CLOSED, 
       () => {
         setInterstitialLoaded(false);
-        interstitial.load(); // شحن الإعلان البيني التالي في الخلفية
+        interstitial.load();
       }
     );
 
-    // بدء تحميل الإعلانات مسبقاً بمجرد تشغيل التطبيق لأول مرة
-    rewarded.load();
-    interstitial.load();
-
-    // تنظيف كافة المستمعين عند إغلاق المكون البرمجي لمنع تضخم الذاكرة
     return () => {
       subscription.remove();
       unsubscribeOpen();
@@ -108,14 +120,11 @@ export default function App() {
     };
   }, []);
 
-  // ==========================================
-  // د- مستمع استقبال الطلبات القادمة من الويب (Bridge)
-  // ==========================================
+  // استقبال الطلبات القادمة من اللعبة (WebView)
   const handleWebViewMessage = (event) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
 
-      // 1. استقبال طلب إعلان المكافأة (عند الرغبة في شحن الذهب)
       if (data.type === "REQUEST_REWARDED_AD") {
         if (rewardedLoaded) {
           rewarded.show();
@@ -124,7 +133,6 @@ export default function App() {
         }
       }
 
-      // 2. استقبال طلب الإعلان البيني المنظم (الذي ينطلق فقط كل 5 مستويات من حسابات الويب)
       if (data.type === "REQUEST_INTERSTITIAL_AD") {
         if (interstitialLoaded) {
           interstitial.show();
@@ -139,10 +147,8 @@ export default function App() {
 
   return (
     <View style={styles.container}>
-      {/* إخفاء شريط الحالة العلوي للهاتف لمنع تشتيت اللاعب وإعطاء مظهر الشاشة الكاملة */}
       <StatusBar hidden={true} />
       
-      {/* حاوية الـ WebView المسؤولة عن تشغيل اللعبة */}
       <View style={styles.webViewContainer}>
         <WebView
           ref={webViewRef}
@@ -157,19 +163,26 @@ export default function App() {
         />
       </View>
 
-      {/* حاوية إعلان البانر السفلي المستقر والثابت هندسياً في الأسفل */}
+      {/* زر شفاف تجريبي مخفي في الزاوية يمكنك الضغط عليه لفتح Ad Inspector فوراً */}
+      {__DEV__ && (
+        <TouchableOpacity style={styles.inspectorBtn} onPress={openInspector}>
+          <Text style={styles.inspectorText}>🔍 Ad Inspector</Text>
+        </TouchableOpacity>
+      )}
+
+      {/* حاوية إعلان البانر السفلي */}
       <View style={styles.bannerContainer}>
         <BannerAd
           unitId={bannerAdUnitId}
           size={BannerAdSize.BANNER}
           requestOptions={{ requestNonPersonalizedAdsOnly: true }}
+          onAdFailedToLoad={(error) => console.log('Banner Ad Load Failed:', error)}
         />
       </View>
     </View>
   );
 }
 
-// التنسيقات والأبعاد البصرية للهيكل الخارجي للـ App
 const styles = StyleSheet.create({
   container: { 
     flex: 1, 
@@ -189,6 +202,19 @@ const styles = StyleSheet.create({
     backgroundColor: '#0b132b', 
     paddingVertical: 3,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255,255,255,0.05)', // خط علوي خفيف جداً لفصل البانر بشكل أنيق عن اللعبة
+    borderTopColor: 'rgba(255,255,255,0.05)',
   },
+  inspectorBtn: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    padding: 6,
+    borderRadius: 5,
+    zIndex: 999,
+  },
+  inspectorText: {
+    color: '#fff',
+    fontSize: 10,
+  }
 });
