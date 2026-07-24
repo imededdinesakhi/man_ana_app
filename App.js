@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, View, StatusBar, AppState } from 'react-native';
+import { StyleSheet, View, StatusBar } from 'react-native';
 import { WebView } from 'react-native-webview';
 import mobileAds, { 
   BannerAd, 
@@ -8,13 +8,16 @@ import mobileAds, {
   RewardedAd, 
   RewardedAdEventType, 
   InterstitialAd, 
-  AdEventType,
-  AppOpenAd
+  AdEventType
 } from 'react-native-google-mobile-ads';
 
-// مفتاح التحكم بين إعلانات الاختبار والإعلانات الحقيقية
-const USE_TEST_ADS = true; 
+// =========================================================
+// 💡 للتحكم في نوع الإعلانات:
+// - اجعلها false حتى تظهر إعلاناتك الحقيقية بدلاً من Test Ad
+// =========================================================
+const USE_TEST_ADS = false; 
 
+// معرفات الإعلانات الحقيقية والتجريبية
 const bannerAdUnitId = USE_TEST_ADS ? TestIds.BANNER : 'ca-app-pub-3363485131173314/7285247587';
 const interstitialAdUnitId = USE_TEST_ADS ? TestIds.INTERSTITIAL : 'ca-app-pub-3363485131173314/2204732756';
 const rewardedAdUnitId = USE_TEST_ADS ? TestIds.REWARDED : 'ca-app-pub-3363485131173314/2622545474';
@@ -30,22 +33,48 @@ export default function App() {
 
   const GAME_URL = "https://imededdinesakhi.github.io/man_ana_web/";
 
-  // دالة إرسال النتيجة إلى الـ WebView بحماية وإعادة محاولة
+  // دالة منح الـ 50 عملة للعبة الويب بكل الطرق الممكنة
   const sendRewardToWeb = () => {
     if (webViewRef.current) {
-      // إرسال كائن نصي وكائن مباشر لضمان توافق جميع متصفحات الويب
-      const rewardData = JSON.stringify({ type: "ADD_COINS_SUCCESS", amount: 50 });
-      
-      webViewRef.current.injectJavaScript(`
-        if (window.onRewardEarned) {
-          window.onRewardEarned(50);
-        }
-        window.postMessage(${rewardData}, '*');
+      const rewardPayload = JSON.stringify({ type: "ADD_COINS_SUCCESS", amount: 50 });
+
+      // 1. إرسال حدث عبر postMessage العادي
+      webViewRef.current.postMessage(rewardPayload);
+
+      // 2. حقن كود JavaScript مباشر في صفحة اللعبة لإضافة العملات وتحديث الواجهة والـ LocalStorage
+      const injectJsCode = `
+        (function() {
+          try {
+            // محاولة استدعاء الدالة المخصصة في اللعبة إن وجدت
+            if (typeof window.addCoins === 'function') {
+              window.addCoins(50);
+            } else if (typeof window.onRewardEarned === 'function') {
+              window.onRewardEarned(50);
+            }
+
+            // تحديث المتغيرات الشائعة للعملات في اللعبة
+            if (typeof window.coins !== 'undefined') {
+              window.coins = (parseInt(window.coins) || 0) + 50;
+            }
+
+            // إرسال حدث window message يدوي داخل الويب
+            window.dispatchEvent(new MessageEvent('message', {
+              data: ${rewardPayload}
+            }));
+
+            // إعادة تحميل أو تحديث واجهة النقاط إن كانت مسجلة في LocalStorage
+            let currentCoins = parseInt(localStorage.getItem('coins') || '0');
+            localStorage.setItem('coins', currentCoins + 50);
+
+          } catch(e) {
+            console.error("Error executing reward script:", e);
+          }
+        })();
         true;
-      `);
-      
-      webViewRef.current.postMessage(rewardData);
-      console.log('Reward message sent to WebView successfully!');
+      `;
+
+      webViewRef.current.injectJavaScript(injectJsCode);
+      console.log('Reward execution injected to WebView!');
     }
   };
 
@@ -68,8 +97,8 @@ export default function App() {
     const unsubscribeEarned = rewarded.addAdEventListener(
       RewardedAdEventType.EARNED_REWARD, 
       (reward) => {
-        console.log('User earned reward:', reward);
-        sendRewardToWeb(); // إرسال المكافأة فوراً
+        console.log('User completed rewarded ad, giving 50 coins...');
+        sendRewardToWeb();
       }
     );
 
@@ -77,7 +106,7 @@ export default function App() {
       AdEventType.CLOSED, 
       () => {
         setRewardedLoaded(false);
-        rewarded.load(); // إعادة التحميل للإعلان القادم
+        rewarded.load();
       }
     );
 
@@ -104,7 +133,7 @@ export default function App() {
     };
   }, []);
 
-  // استقبال الطلبات من الـ WebView
+  // استقبال طلبات الإعلانات القادمة من اللعبة (WebView)
   const handleWebViewMessage = (event) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
@@ -147,12 +176,13 @@ export default function App() {
         />
       </View>
 
-      {/* إعلان البانر السفلي */}
+      {/* إعلان البانر السفلي (الحقيقي) */}
       <View style={styles.bannerContainer}>
         <BannerAd
           unitId={bannerAdUnitId}
           size={BannerAdSize.BANNER}
           requestOptions={{ requestNonPersonalizedAdsOnly: true }}
+          onAdFailedToLoad={(error) => console.log('Banner Ad Load Failed:', error)}
         />
       </View>
     </View>
