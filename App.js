@@ -7,29 +7,29 @@ import mobileAds, {
   RewardedAd,
   RewardedAdEventType,
   InterstitialAd,
-  AdEventType
+  AdEventType,
+  TestIds
 } from 'react-native-google-mobile-ads';
 
-// معرفات الإعلانات الحقيقية
-const bannerAdUnitId = 'ca-app-pub-3363485131173314/7285247587';
-const interstitialAdUnitId = 'ca-app-pub-3363485131173314/2204732756';
-const rewardedAdUnitId = 'ca-app-pub-3363485131173314/2622545474';
-
-// إنشاء كائنات الإعلانات
-const interstitial = InterstitialAd.createForAdRequest(interstitialAdUnitId, { requestNonPersonalizedAdsOnly: true });
-const rewarded = RewardedAd.createForAdRequest(rewardedAdUnitId, { requestNonPersonalizedAdsOnly: true });
+// استخدام TestIds للاختبار (استبدلها بالمعرفات الحقيقية عند الرفع للمتجر)
+const bannerAdUnitId = __DEV__ ? TestIds.BANNER : 'ca-app-pub-3363485131173314/7285247587';
+const interstitialAdUnitId = __DEV__ ? TestIds.INTERSTITIAL : 'ca-app-pub-3363485131173314/2204732756';
+const rewardedAdUnitId = __DEV__ ? TestIds.REWARDED : 'ca-app-pub-3363485131173314/2622545474';
 
 export default function App() {
   const webViewRef = useRef(null);
   const [rewardedLoaded, setRewardedLoaded] = useState(false);
   const [interstitialLoaded, setInterstitialLoaded] = useState(false);
 
+  // المراجع الخاصة بالإعلانات العابرة والمكافآت
+  const interstitialRef = useRef(null);
+  const rewardedRef = useRef(null);
+
   const GAME_URL = 'https://imededdinesakhi.github.io/man_ana_web/';
 
   const sendRewardToWeb = () => {
     if (webViewRef.current) {
       const rewardPayload = JSON.stringify({ type: 'ADD_COINS_SUCCESS', amount: 50 });
-
       webViewRef.current.postMessage(rewardPayload);
 
       const injectJsCode = `
@@ -63,92 +63,100 @@ export default function App() {
   };
 
   useEffect(() => {
-    // 1. تهيئة AdMob
+    // 1. تهيئة AdMob أولاً
     mobileAds()
       .initialize()
       .then(() => {
-        rewarded.load();
-        interstitial.load();
+        // 2. إنشاء كائنات الإعلانات بعد اكتمال التهيئة
+        interstitialRef.current = InterstitialAd.createForAdRequest(interstitialAdUnitId, {
+          requestNonPersonalizedAdsOnly: true,
+        });
+
+        rewardedRef.current = RewardedAd.createForAdRequest(rewardedAdUnitId, {
+          requestNonPersonalizedAdsOnly: true,
+        });
+
+        // 3. ربط الاستماعات بعد التكوين
+        const unsubscribeRewardedLoaded = rewardedRef.current.addAdEventListener(
+          RewardedAdEventType.LOADED,
+          () => setRewardedLoaded(true)
+        );
+
+        const unsubscribeEarned = rewardedRef.current.addAdEventListener(
+          RewardedAdEventType.EARNED_REWARD,
+          () => sendRewardToWeb()
+        );
+
+        const unsubscribeRewardedClosed = rewardedRef.current.addAdEventListener(
+          AdEventType.CLOSED,
+          () => {
+            setRewardedLoaded(false);
+            rewardedRef.current?.load();
+          }
+        );
+
+        const unsubscribeRewardedError = rewardedRef.current.addAdEventListener(
+          AdEventType.ERROR,
+          (error) => {
+            console.warn('Rewarded Ad Error:', error);
+            setRewardedLoaded(false);
+          }
+        );
+
+        const unsubscribeInterstitialLoaded = interstitialRef.current.addAdEventListener(
+          AdEventType.LOADED,
+          () => setInterstitialLoaded(true)
+        );
+
+        const unsubscribeInterstitialClosed = interstitialRef.current.addAdEventListener(
+          AdEventType.CLOSED,
+          () => {
+            setInterstitialLoaded(false);
+            interstitialRef.current?.load();
+          }
+        );
+
+        const unsubscribeInterstitialError = interstitialRef.current.addAdEventListener(
+          AdEventType.ERROR,
+          (error) => {
+            console.warn('Interstitial Ad Error:', error);
+            setInterstitialLoaded(false);
+          }
+        );
+
+        // 4. طلب تحميل الإعلانات
+        rewardedRef.current.load();
+        interstitialRef.current.load();
+
+        return () => {
+          unsubscribeRewardedLoaded();
+          unsubscribeEarned();
+          unsubscribeRewardedClosed();
+          unsubscribeRewardedError();
+          unsubscribeInterstitialLoaded();
+          unsubscribeInterstitialClosed();
+          unsubscribeInterstitialError();
+        };
       });
-
-    // 2. أحداث إعلان المكافآت (Rewarded)
-    const unsubscribeRewardedLoaded = rewarded.addAdEventListener(
-      RewardedAdEventType.LOADED, 
-      () => setRewardedLoaded(true)
-    );
-
-    const unsubscribeEarned = rewarded.addAdEventListener(
-      RewardedAdEventType.EARNED_REWARD,
-      () => sendRewardToWeb()
-    );
-
-    const unsubscribeRewardedClosed = rewarded.addAdEventListener(
-      AdEventType.CLOSED, 
-      () => {
-        setRewardedLoaded(false);
-        rewarded.load(); // إعادة التحميل للإعلان القادم
-      }
-    );
-
-    const unsubscribeRewardedError = rewarded.addAdEventListener(
-      AdEventType.ERROR,
-      (error) => {
-        console.warn('Rewarded Ad Error:', error);
-        setRewardedLoaded(false);
-      }
-    );
-
-    // 3. أحداث الإعلانات البينية (Interstitial)
-    const unsubscribeInterstitialLoaded = interstitial.addAdEventListener(
-      AdEventType.LOADED, 
-      () => setInterstitialLoaded(true)
-    );
-
-    const unsubscribeInterstitialClosed = interstitial.addAdEventListener(
-      AdEventType.CLOSED, 
-      () => {
-        setInterstitialLoaded(false);
-        interstitial.load(); // إعادة التحميل للإعلان القادم
-      }
-    );
-
-    const unsubscribeInterstitialError = interstitial.addAdEventListener(
-      AdEventType.ERROR,
-      (error) => {
-        console.warn('Interstitial Ad Error:', error);
-        setInterstitialLoaded(false);
-      }
-    );
-
-    return () => {
-      unsubscribeRewardedLoaded();
-      unsubscribeEarned();
-      unsubscribeRewardedClosed();
-      unsubscribeRewardedError();
-      unsubscribeInterstitialLoaded();
-      unsubscribeInterstitialClosed();
-      unsubscribeInterstitialError();
-    };
   }, []);
 
-  // استقبال الطلبات من الـ WebView
   const handleWebViewMessage = (event) => {
     try {
       const data = JSON.parse(event.nativeEvent.data);
 
       if (data.type === "REQUEST_REWARDED_AD") {
-        if (rewardedLoaded) {
-          rewarded.show();
+        if (rewardedLoaded && rewardedRef.current) {
+          rewardedRef.current.show();
         } else {
-          rewarded.load(); // محاولة التحميل مجدداً إذا لم يكن جاهزاً
+          rewardedRef.current?.load();
         }
       }
 
       if (data.type === "REQUEST_INTERSTITIAL_AD") {
-        if (interstitialLoaded) {
-          interstitial.show();
+        if (interstitialLoaded && interstitialRef.current) {
+          interstitialRef.current.show();
         } else {
-          interstitial.load(); // محاولة التحميل مجدداً
+          interstitialRef.current?.load();
         }
       }
     } catch (error) {
@@ -174,7 +182,6 @@ export default function App() {
         />
       </View>
 
-      {/* إعلان البانر متكيف مع الشاشة */}
       <View style={styles.bannerContainer}>
         <BannerAd
           unitId={bannerAdUnitId}
