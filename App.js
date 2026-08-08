@@ -1,223 +1,212 @@
-import React, { useEffect, useState } from 'react';
-import { 
-  StyleSheet, 
-  Text, 
-  View, 
-  TouchableOpacity, 
-  SafeAreaView, 
-  ActivityIndicator,
-  Alert 
-} from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { StyleSheet, View, StatusBar } from 'react-native';
 import { WebView } from 'react-native-webview';
-import mobileAds, { 
-  BannerAd, 
-  BannerAdSize, 
-  TestIds, 
-  RewardedAd, 
-  RewardedAdReward,
+import mobileAds, {
+  BannerAd,
+  BannerAdSize,
+  RewardedAd,
+  RewardedAdEventType,
   InterstitialAd,
-  AdEventType 
+  AdEventType
 } from 'react-native-google-mobile-ads';
 
-// ⚠️ نستخدم هنا معرفات الاختبار الرسمية لضمان الظهور الفوري عند الاختبار
-// عند الجاهزية لإطلاق التطبيق، استبدل TestIds بالمعرفات الحقيقية الخاصة بك
-const BANNER_ID = TestIds.BANNER;
-const INTERSTITIAL_ID = TestIds.INTERSTITIAL;
-const REWARDED_ID = TestIds.REWARDED;
+// معرفات الإعلانات الحقيقية
+const bannerAdUnitId = 'ca-app-pub-3363485131173314/7285247587';
+const interstitialAdUnitId = 'ca-app-pub-3363485131173314/2204732756';
+const rewardedAdUnitId = 'ca-app-pub-3363485131173314/2622545474';
 
-// إنشاء كائنات الإعلانات البينية والمكافأة
-const interstitial = InterstitialAd.createForAdRequest(INTERSTITIAL_ID, {
-  requestNonPersonalizedAdsOnly: true,
-});
-
-const rewarded = RewardedAd.createForAdRequest(REWARDED_ID, {
-  requestNonPersonalizedAdsOnly: true,
-});
+// إنشاء كائنات الإعلانات
+const interstitial = InterstitialAd.createForAdRequest(interstitialAdUnitId, { requestNonPersonalizedAdsOnly: true });
+const rewarded = RewardedAd.createForAdRequest(rewardedAdUnitId, { requestNonPersonalizedAdsOnly: true });
 
 export default function App() {
-  const [isSdkInitialized, setIsSdkInitialized] = useState(false);
-  const [interstitialLoaded, setInterstitialLoaded] = useState(false);
+  const webViewRef = useRef(null);
   const [rewardedLoaded, setRewardedLoaded] = useState(false);
+  const [interstitialLoaded, setInterstitialLoaded] = useState(false);
 
-  useEffect(() => {
-    // 1️⃣ تهيئة مكتبة AdMob فور فتح التطبيق
-    mobileAds()
-      .initialize()
-      .then(() => {
-        console.log('✅ AdMob SDK Initialized Successfully');
-        setIsSdkInitialized(true);
+  const GAME_URL = 'https://imededdinesakhi.github.io/man_ana_web/';
 
-        // بدء تحميل الإعلانات مسبقاً بعد اكتمال التهيئة
-        interstitial.load();
-        rewarded.load();
-      })
-      .catch((err) => console.log('❌ AdMob Init Error:', err));
+  const sendRewardToWeb = () => {
+    if (webViewRef.current) {
+      const rewardPayload = JSON.stringify({ type: 'ADD_COINS_SUCCESS', amount: 50 });
 
-    // 2️⃣ إعداد مستمعات الإعلان البيني (Interstitial)
-    const unsubInterLoaded = interstitial.addAdEventListener(AdEventType.LOADED, () => {
-      console.log('✅ Interstitial Ad Loaded');
-      setInterstitialLoaded(true);
-    });
+      webViewRef.current.postMessage(rewardPayload);
 
-    const unsubInterClosed = interstitial.addAdEventListener(AdEventType.CLOSED, () => {
-      console.log('🔄 Interstitial Ad Closed -> Reloading...');
-      setInterstitialLoaded(false);
-      interstitial.load(); // إعادة التحميل للمرة القادمة
-    });
+      const injectJsCode = `
+        (function() {
+          try {
+            if (typeof window.addCoins === 'function') {
+              window.addCoins(50);
+            } else if (typeof window.onRewardEarned === 'function') {
+              window.onRewardEarned(50);
+            }
 
-    const unsubInterFailed = interstitial.addAdEventListener(AdEventType.ERROR, (error) => {
-      console.log('❌ Interstitial Failed To Load:', error);
-      setInterstitialLoaded(false);
-    });
+            if (typeof window.coins !== 'undefined') {
+              window.coins = (parseInt(window.coins) || 0) + 50;
+            }
 
-    // 3️⃣ إعداد مستمعات إعلان المكافأة (Rewarded)
-    const unsubRewardLoaded = rewarded.addAdEventListener(RewardedAdReward.LOADED, () => {
-      console.log('✅ Rewarded Ad Loaded');
-      setRewardedLoaded(true);
-    });
+            window.dispatchEvent(new MessageEvent('message', {
+              data: ${rewardPayload}
+            }));
 
-    const unsubRewardEarned = rewarded.addAdEventListener(RewardedAdReward.EARNED_REWARD, (reward) => {
-      console.log('🎁 User Earned Reward:', reward);
-      Alert.alert('تهانينا!', `لقد حصلت على المكافأة: ${reward.amount} ${reward.type}`);
-      // 👈 هنا تضع المنطق الخاص بمنح المحاولات أو الأرباح داخل لعبتك
-    });
+            let currentCoins = parseInt(localStorage.getItem('coins') || '0');
+            localStorage.setItem('coins', currentCoins + 50);
+          } catch (e) {
+            console.error('Error executing reward script:', e);
+          }
+        })();
+        true;
+      `;
 
-    const unsubRewardClosed = rewarded.addAdEventListener(AdEventType.CLOSED, () => {
-      console.log('🔄 Rewarded Ad Closed -> Reloading...');
-      setRewardedLoaded(false);
-      rewarded.load(); // إعادة التحميل للمرة القادمة
-    });
-
-    const unsubRewardFailed = rewarded.addAdEventListener(AdEventType.ERROR, (error) => {
-      console.log('❌ Rewarded Failed To Load:', error);
-      setRewardedLoaded(false);
-    });
-
-    // تنظيف المستمعات عند إغلاق المكون
-    return () => {
-      unsubInterLoaded();
-      unsubInterClosed();
-      unsubInterFailed();
-      unsubRewardLoaded();
-      unsubRewardEarned();
-      unsubRewardClosed();
-      unsubRewardFailed();
-    };
-  }, []);
-
-  // دالة تشغيل الإعلان البيني
-  const handleShowInterstitial = () => {
-    if (interstitialLoaded) {
-      interstitial.show();
-    } else {
-      Alert.alert('جاري التحميل', 'الإعلان البيني غير جاهز بعد، جاري المحاولة مرة أخرى...');
-      interstitial.load();
+      webViewRef.current.injectJavaScript(injectJsCode);
     }
   };
 
-  // دالة تشغيل إعلان المكافأة
-  const handleShowRewarded = () => {
-    if (rewardedLoaded) {
-      rewarded.show();
-    } else {
-      Alert.alert('جاري التحميل', 'إعلان المكافأة غير جاهز بعد، جاري المحاولة مرة أخرى...');
-      rewarded.load();
+  useEffect(() => {
+    // 1. تهيئة AdMob
+    mobileAds()
+      .initialize()
+      .then(() => {
+        rewarded.load();
+        interstitial.load();
+      });
+
+    // 2. أحداث إعلان المكافآت (Rewarded)
+    const unsubscribeRewardedLoaded = rewarded.addAdEventListener(
+      RewardedAdEventType.LOADED, 
+      () => setRewardedLoaded(true)
+    );
+
+    const unsubscribeEarned = rewarded.addAdEventListener(
+      RewardedAdEventType.EARNED_REWARD,
+      () => sendRewardToWeb()
+    );
+
+    const unsubscribeRewardedClosed = rewarded.addAdEventListener(
+      AdEventType.CLOSED, 
+      () => {
+        setRewardedLoaded(false);
+        rewarded.load(); // إعادة التحميل للإعلان القادم
+      }
+    );
+
+    const unsubscribeRewardedError = rewarded.addAdEventListener(
+      AdEventType.ERROR,
+      (error) => {
+        console.warn('Rewarded Ad Error:', error);
+        setRewardedLoaded(false);
+      }
+    );
+
+    // 3. أحداث الإعلانات البينية (Interstitial)
+    const unsubscribeInterstitialLoaded = interstitial.addAdEventListener(
+      AdEventType.LOADED, 
+      () => setInterstitialLoaded(true)
+    );
+
+    const unsubscribeInterstitialClosed = interstitial.addAdEventListener(
+      AdEventType.CLOSED, 
+      () => {
+        setInterstitialLoaded(false);
+        interstitial.load(); // إعادة التحميل للإعلان القادم
+      }
+    );
+
+    const unsubscribeInterstitialError = interstitial.addAdEventListener(
+      AdEventType.ERROR,
+      (error) => {
+        console.warn('Interstitial Ad Error:', error);
+        setInterstitialLoaded(false);
+      }
+    );
+
+    return () => {
+      unsubscribeRewardedLoaded();
+      unsubscribeEarned();
+      unsubscribeRewardedClosed();
+      unsubscribeRewardedError();
+      unsubscribeInterstitialLoaded();
+      unsubscribeInterstitialClosed();
+      unsubscribeInterstitialError();
+    };
+  }, []);
+
+  // استقبال الطلبات من الـ WebView
+  const handleWebViewMessage = (event) => {
+    try {
+      const data = JSON.parse(event.nativeEvent.data);
+
+      if (data.type === "REQUEST_REWARDED_AD") {
+        if (rewardedLoaded) {
+          rewarded.show();
+        } else {
+          rewarded.load(); // محاولة التحميل مجدداً إذا لم يكن جاهزاً
+        }
+      }
+
+      if (data.type === "REQUEST_INTERSTITIAL_AD") {
+        if (interstitialLoaded) {
+          interstitial.show();
+        } else {
+          interstitial.load(); // محاولة التحميل مجدداً
+        }
+      }
+    } catch (error) {
+      console.error("Error handling webview message:", error);
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      {/* 🌐 منطقة الـ WebView الخاصة باللعبة */}
+    <View style={styles.container}>
+      <StatusBar hidden={true} />
+      
       <View style={styles.webViewContainer}>
-        <WebView 
-          source={{ uri: 'https://imededdinesakhi.github.io/man_ana_web/' }} // 👈 استبدل برابط لعبتك الحقيقي
+        <WebView
+          ref={webViewRef}
+          source={{ uri: GAME_URL }}
           style={styles.webview}
+          onMessage={handleWebViewMessage}
           javaScriptEnabled={true}
           domStorageEnabled={true}
+          scalesPageToFit={false}
+          originWhitelist={['*']}
+          allowsBackForwardNavigationGestures={true}
         />
       </View>
 
-      {/* 🎮 أزرار التحكم بالتجربة (يمكنك وضعها داخل اللعبة أو هنا للتجربة) */}
-      <View style={styles.controlsContainer}>
-        <TouchableOpacity 
-          style={[styles.btn, !interstitialLoaded && styles.btnDisabled]} 
-          onPress={handleShowInterstitial}
-        >
-          <Text style={styles.btnText}>
-            {interstitialLoaded ? 'عرض إعلان بيني' : 'جاري تحميل البيني...'}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity 
-          style={[styles.btn, styles.btnReward, !rewardedLoaded && styles.btnDisabled]} 
-          onPress={handleShowRewarded}
-        >
-          <Text style={styles.btnText}>
-            {rewardedLoaded ? 'مشاهدة إعلان مكافأة 🎁' : 'جاري تحميل المكافأة...'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* 📢 منطقة البانر السفلي المضمونة */}
+      {/* إعلان البانر متكيف مع الشاشة */}
       <View style={styles.bannerContainer}>
-        {isSdkInitialized ? (
-          <BannerAd
-            unitId={BANNER_ID}
-            size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-            requestOptions={{
-              requestNonPersonalizedAdsOnly: true,
-            }}
-            onAdLoaded={() => console.log('✅ Banner Ad Loaded Successfully')}
-            onAdFailedToLoad={(error) => console.log('❌ Banner Failed To Load:', error)}
-          />
-        ) : (
-          <ActivityIndicator size="small" color="#ffffff" />
-        )}
+        <BannerAd
+          unitId={bannerAdUnitId}
+          size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+          requestOptions={{ requestNonPersonalizedAdsOnly: true }}
+          onAdFailedToLoad={(error) => console.log('Banner Ad Load Failed:', error)}
+        />
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0b132b',
+  container: { 
+    flex: 1, 
+    backgroundColor: '#0b132b' 
   },
-  webViewContainer: {
-    flex: 1, // استغلال كل المساحة المتاحة للعبة
+  webViewContainer: { 
+    flex: 1 
   },
-  webview: {
-    flex: 1,
-    backgroundColor: 'transparent',
-  },
-  controlsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 8,
-    backgroundColor: '#1c2541',
-  },
-  btn: {
-    backgroundColor: '#3a86ef',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
-  },
-  btnReward: {
-    backgroundColor: '#ff006e',
-  },
-  btnDisabled: {
-    backgroundColor: '#6c757d',
-  },
-  btnText: {
-    color: '#ffffff',
-    fontSize: 12,
-    fontWeight: 'bold',
+  webview: { 
+    flex: 1, 
+    backgroundColor: 'transparent' 
   },
   bannerContainer: {
     width: '100%',
-    minHeight: 60, // 👈 حجز ارتفاع ثري ومستقر يمنع خروج البانر أسفل الشاشة
+    minHeight: 50,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#0b132b',
+    backgroundColor: '#0b132b', 
+    paddingVertical: 3,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255,255,255,0.05)',
   },
 });
