@@ -4,9 +4,10 @@ import { WebView } from 'react-native-webview';
 import mobileAds, { BannerAd, BannerAdSize, RewardedAd, RewardedAdEventType, InterstitialAd, AdEventType } from 'react-native-google-mobile-ads';
 
 // معرفاتك الحقيقية
-const bannerAdUnitId = 'ca-app-pub-3363485131173314/7285247587';
-const interstitialAdUnitId = 'ca-app-pub-3363485131173314/2204732756';
-const rewardedAdUnitId = 'ca-app-pub-3363485131173314/2622545474';
+// استبدل المعرفات القديمة بهذه المعرفات في ملف App.js
+const bannerAdUnitId = 'ca-app-pub-3940256099942544/6300978111';
+const interstitialAdUnitId = 'ca-app-pub-3940256099942544/1033173712';
+const rewardedAdUnitId = 'ca-app-pub-3940256099942544/5224354917';
 
 export default function App() {
   const [adStatus, setAdStatus] = useState("Initializing...");
